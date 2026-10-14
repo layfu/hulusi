@@ -16,6 +16,50 @@ window.HLS = window.HLS || {};
     el._t = setTimeout(function () { el.classList.remove('show'); }, 2400);
   }
 
+  // 确认对话框：破坏性操作用大字按钮确认，避免误触
+  var dlgEl, dlgMsg, dlgOk, dlgCancel, dlgOnOk, dlgReturn;
+
+  function ensureDialog() {
+    if (dlgEl) return dlgEl;
+    dlgEl = document.getElementById('dialog');
+    if (!dlgEl) return null;
+    dlgMsg = document.getElementById('dialog-msg');
+    dlgOk = document.getElementById('dialog-ok');
+    dlgCancel = document.getElementById('dialog-cancel');
+    dlgOk.addEventListener('click', function () { settle(true); });
+    dlgCancel.addEventListener('click', function () { settle(false); });
+    dlgEl.addEventListener('click', function (e) { if (e.target === dlgEl) settle(false); });
+    document.addEventListener('keydown', function (e) {
+      if (dlgEl.classList.contains('open') && e.key === 'Escape') {
+        e.preventDefault();
+        settle(false);
+      }
+    });
+    return dlgEl;
+  }
+
+  function settle(ok) {
+    if (!dlgEl) return;
+    dlgEl.classList.remove('open');
+    if (dlgReturn && dlgReturn.focus) dlgReturn.focus();
+    dlgReturn = null;
+    dlgEl.setAttribute('aria-hidden', 'true');
+    var cb = dlgOnOk;
+    dlgOnOk = null;
+    if (ok && cb) cb();
+  }
+
+  function confirmDialog(msg, okLabel, onOk) {
+    if (!ensureDialog()) { if (window.confirm(msg)) onOk(); return; }
+    dlgMsg.textContent = msg;
+    dlgOk.textContent = okLabel || '确定';
+    dlgOnOk = onOk;
+    dlgReturn = document.activeElement;
+    dlgEl.setAttribute('aria-hidden', 'false');
+    dlgEl.classList.add('open');
+    dlgOk.focus();
+  }
+
   function printScore() {
     window.print();
   }
@@ -25,38 +69,10 @@ window.HLS = window.HLS || {};
     setTimeout(function () { window.print(); }, 400);
   }
 
-  function exportPng(song) {
-    var svgStr = HLS.render.buildSvg(song, -1, -1);
-    var blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-    var url = URL.createObjectURL(blob);
-    var img = new Image();
-    img.onload = function () {
-      var scale = 2;
-      var w = img.width || 880;
-      var h = img.height || 600;
-      var canvas = document.createElement('canvas');
-      canvas.width = w * scale;
-      canvas.height = h * scale;
-      var ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.scale(scale, scale);
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-      canvas.toBlob(function (b) {
-        if (!b) { toast('导出图片失败'); return; }
-        HLS.storage.download(b, HLS.storage.safeName(song, 'png'));
-        toast('已导出图片');
-      }, 'image/png');
-    };
-    img.onerror = function () { URL.revokeObjectURL(url); toast('导出图片失败'); };
-    img.src = url;
-  }
-
   HLS.toast = toast;
+  HLS.confirm = confirmDialog;
   HLS.exporters = {
     print: printScore,
-    pdf: exportPdf,
-    png: exportPng
+    pdf: exportPdf
   };
 })(window.HLS);

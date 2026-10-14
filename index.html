@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>葫芦丝打谱</title>
-<link rel="stylesheet" href="css/base.css?v=2">
-<link rel="stylesheet" href="css/print.css?v=2" media="print">
+<link rel="stylesheet" href="css/base.css?v=3">
+<link rel="stylesheet" href="css/print.css?v=3" media="print">
 </head>
 <body>
 
@@ -14,13 +14,14 @@
     <span class="logo">葫</span>
     <span class="brand-name">葫芦丝打谱</span>
   </div>
-  <nav class="filebar">
+  <nav class="filebar" aria-label="文件与打印">
     <button class="btn btn-ghost" data-file="open">打开</button>
     <button class="btn btn-ghost" data-file="save">保存文件</button>
-    <button class="btn btn-ghost" data-file="new">清空</button>
+    <button class="btn btn-ghost btn-danger-ghost" data-file="new">清空</button>
+    <span class="filebar-sep" aria-hidden="true"></span>
+    <button class="btn btn-ghost" data-file="preview">打印预览</button>
     <button class="btn btn-ghost" data-file="print">打印</button>
     <button class="btn btn-ghost" data-file="pdf">导出 PDF</button>
-    <button class="btn btn-primary" data-file="png">导出图片</button>
   </nav>
   <button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false">☰ 菜单</button>
 </header>
@@ -76,8 +77,8 @@
 
   <aside class="toolbar" role="toolbar" aria-label="打谱工具栏">
 
-  <div class="group">
-    <span class="group-title">音符</span>
+  <div class="group step-group step-pitch">
+    <span class="group-title" id="pitch-title">① 音符（点数字加一个）</span>
     <div class="row">
       <button class="key" data-note="1">1</button>
       <button class="key" data-note="2">2</button>
@@ -90,30 +91,53 @@
     </div>
   </div>
 
-  <div class="group">
-    <span class="group-title">音区 <b id="octave-ind">中音</b></span>
+  <div class="group step-group step-octave">
+    <span class="group-title">② 音区（可选） <b id="octave-ind">中音</b></span>
     <div class="row">
-      <button class="btn" data-act="octave-down">低八度</button>
-      <button class="btn" data-act="octave-mid">中音</button>
-      <button class="btn" data-act="octave-up">高八度</button>
+      <button class="btn btn-pic" data-act="octave-down">低八度</button>
+      <button class="btn btn-pic" data-act="octave-mid">中音</button>
+      <button class="btn btn-pic" data-act="octave-up">高八度</button>
     </div>
   </div>
 
-  <div class="group">
-    <span class="group-title">时值</span>
+  <div class="group step-group step-dur">
+    <span class="group-title">③ 时值（可选）</span>
     <div class="row">
-      <button class="btn" data-dur="whole">全音符</button>
-      <button class="btn" data-dur="half">二分</button>
-      <button class="btn" data-dur="quarter">四分</button>
-      <button class="btn" data-dur="eighth">八分</button>
-      <button class="btn" data-dur="sixteenth">十六分</button>
-      <button class="btn" data-act="dot">附点 ·</button>
+      <button class="btn btn-pic" data-dur="whole">全音符</button>
+      <button class="btn btn-pic" data-dur="half">二分</button>
+      <button class="btn btn-pic" data-dur="quarter">四分</button>
+      <button class="btn btn-pic" data-dur="eighth">八分</button>
+      <button class="btn btn-pic" data-dur="sixteenth">十六分</button>
+      <button class="btn btn-pic" data-act="dot">附点 ·</button>
     </div>
   </div>
 
-  <div class="group">
-    <span class="group-title">葫芦丝符号</span>
+  <div class="group step-group step-form">
+    <span class="group-title">④ 写法（可选）</span>
+    <div class="row row-forms">
+      <button class="btn btn-form" data-form="">素音</button>
+      <button class="btn btn-form" data-form="single">吐</button>
+      <button class="btn btn-form" data-form="breath">吸气 v</button>
+      <button class="btn btn-form" data-form="single,breath">吐+吸气</button>
+      <button class="btn btn-form" data-form="da">打音</button>
+      <button class="btn btn-form" data-form="bo">波音 ~</button>
+      <button class="btn btn-form" data-form="breath,bo">吸气+波音</button>
+      <button class="btn btn-form" data-form="up">上滑</button>
+      <button class="btn btn-form" data-form="down">下滑</button>
+      <button class="btn btn-form" data-form="up,single">上滑+吐</button>
+      <button class="btn btn-form" data-form="down,single">下滑+吐</button>
+      <button class="btn btn-form" data-form="up,grace">上滑+倚音</button>
+      <button class="btn btn-form" data-form="up,single,grace">上滑+吐+倚音</button>
+      <button class="btn btn-form" data-form="grace">倚音</button>
+      <button class="btn btn-form btn-brush" data-act="brush">沿用写法</button>
+    </div>
+  </div>
+
+  <div class="group group-more">
     <div class="row">
+      <button class="btn btn-more" data-act="more" aria-expanded="false">更多符号 ▾</button>
+    </div>
+    <div class="row row-more">
       <button class="btn btn-sym" data-orn="up">↗ 上滑音</button>
       <button class="btn btn-sym" data-orn="down">↘ 下滑音</button>
       <button class="btn btn-sym" data-orn="single">吐</button>
@@ -124,26 +148,28 @@
       <button class="btn btn-sym" data-orn="da">打音</button>
       <button class="btn btn-sym" data-orn="bo">波音 ~</button>
       <button class="btn btn-sym" data-orn="trill">颤音 tr</button>
-      <button class="btn btn-sym" data-orn="slur" title="连音线：先点起点音符，点此；再点终点音符，点此完成">连音线</button>
-    </div>
-  </div>
-
-  <div class="group">
-    <span class="group-title">反复记号</span>
-    <div class="row">
       <button class="btn btn-sym" data-orn="repeatStart" title="开始反复：选中反复段落第一个音符，点此">‖: 开始反复</button>
       <button class="btn btn-sym" data-orn="repeatEnd" title="结束反复：选中反复段落最后一个音符，点此">:‖ 结束反复</button>
+      <button class="btn btn-sym" data-orn="slur" title="连音线：先点起点音符，点此；再点终点音符，点此完成">连音线</button>
+      <button class="btn" data-act="linebreak">换行</button>
     </div>
   </div>
 
   <div class="group">
     <span class="group-title">编辑</span>
     <div class="row">
+      <button class="btn" data-act="step-prev">◀ 上一步</button>
+      <button class="btn" data-act="step-next">下一步 ▶</button>
       <button class="btn" data-act="undo">撤销</button>
       <button class="btn" data-act="redo">重做</button>
       <button class="btn" data-act="delete">删除</button>
-      <button class="btn" data-act="linebreak">换行</button>
       <button class="btn" data-act="append">继续添加 ▶</button>
+    </div>
+  </div>
+
+  <div class="group group-menu">
+    <div class="row">
+      <button class="btn btn-menu" id="menu-button" type="button" aria-expanded="false">☰ 菜单</button>
     </div>
   </div>
 
@@ -153,11 +179,30 @@
 <input id="file-input" type="file" accept="application/json,.json" hidden>
 <div id="toast"></div>
 
-<script src="js/model.js?v=2"></script>
-<script src="js/symbols.js?v=2"></script>
-<script src="js/render.js?v=2"></script>
-<script src="js/storage.js?v=2"></script>
-<script src="js/export.js?v=2"></script>
-<script src="js/input.js?v=2"></script>
+<div id="preview" class="preview" hidden>
+  <div class="preview-bar">
+    <span class="preview-title">打印预览</span>
+    <button type="button" class="btn btn-primary" id="preview-print">打印</button>
+    <button type="button" class="btn" id="preview-close">关闭</button>
+  </div>
+  <div class="preview-body" id="preview-pages"></div>
+</div>
+
+<div id="dialog" class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-msg" aria-hidden="true">
+  <div class="dialog-card">
+    <p id="dialog-msg" class="dialog-msg"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn dialog-cancel" id="dialog-cancel">取消</button>
+      <button type="button" class="btn btn-danger" id="dialog-ok">确定</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/model.js?v=3"></script>
+<script src="js/symbols.js?v=3"></script>
+<script src="js/render.js?v=3"></script>
+<script src="js/storage.js?v=3"></script>
+<script src="js/export.js?v=3"></script>
+<script src="js/input.js?v=3"></script>
 </body>
 </html>

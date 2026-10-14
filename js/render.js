@@ -57,10 +57,11 @@ window.HLS = window.HLS || {};
     '.scoresvg .slur{ fill:none; stroke:#1b1a17; stroke-width:1.6; }' +
     '.scoresvg .repeatbar{ stroke:#1b1a17; stroke-width:1.8; }' +
     '.scoresvg .repeatdot{ fill:#1b1a17; }' +
-    '.scoresvg .selbox{ fill:rgba(31,122,90,0.13); stroke:#1f7a5a; stroke-width:2; }' +
-    '.scoresvg .tgtbox{ fill:rgba(31,122,90,0.05); stroke:#1f7a5a; stroke-width:1.4; stroke-dasharray:5 4; }' +
-    '.scoresvg .pendbox{ fill:rgba(214,132,20,0.14); stroke:#d68414; stroke-width:2; }' +
-    '.scoresvg .graceedbox{ fill:rgba(120,90,200,0.16); stroke:#785ac8; stroke-width:2; }';
+    '.scoresvg .selbox{ fill:rgba(43,111,72,0.13); stroke:#2b6f48; stroke-width:2; }' +
+    '.scoresvg .insertcaret{ fill:#2b6f48; animation:hlsCaret 1.1s step-end infinite; }' +
+    '@keyframes hlsCaret{ 0%,49%{opacity:1} 50%,100%{opacity:0.1} }' +
+    '.scoresvg .pendbox{ fill:rgba(156,90,18,0.16); stroke:#9c5a12; stroke-width:2; }' +
+    '.scoresvg .graceedbox{ fill:rgba(156,90,18,0.16); stroke:#9c5a12; stroke-width:2; }';
 
   function noteWidth(n) {
     var d = HLS.model.dashesOf(n);
@@ -80,7 +81,8 @@ window.HLS = window.HLS || {};
     return lead;
   }
 
-  function layout(song) {
+  function layout(song, headerH) {
+    if (headerH === undefined) headerH = G.headerH;
     var notes = song.notes;
     var ts = String(song.timeSig || '4/4').split('/');
     var mBeats = (+ts[0]) * 4 / (+ts[1] || 4);
@@ -123,7 +125,7 @@ window.HLS = window.HLS || {};
     var x = G.padX;
     var lineHasNote = false;
 
-    function baselineOf(li) { return G.headerH + li * G.lineH + G.baseline; }
+    function baselineOf(li) { return headerH + li * G.lineH + G.baseline; }
 
     // 第二遍：以「小节（被连音线锁住的相邻小节合并）/ 强制换行」为单位成组排布
     var gi = 0;
@@ -137,6 +139,8 @@ window.HLS = window.HLS || {};
         var locked = nx.startsMeasure && link[nx.measureIndex];
         if (nx.startsMeasure && !locked) break;
         if (locked && gw + (measureWidth[nx.measureIndex] || 0) > G.contentW) break; // 过长则仍断开，避免溢出
+        // 放不下就换行：允许小节被拆到下一行（大字号/窄屏时避免音符被裁掉）
+        if (gw + nx.w + leadOf(nx.note) > G.contentW) break;
         gw += nx.w + leadOf(nx.note);
         gj++;
       }
@@ -196,7 +200,7 @@ window.HLS = window.HLS || {};
       place: place,
       bars: bars,
       repeats: repeats,
-      height: G.headerH + totalLines * G.lineH + 30
+      height: headerH + totalLines * G.lineH + 30
     };
   }
 
@@ -219,17 +223,24 @@ window.HLS = window.HLS || {};
     return s;
   }
 
+  // 插入光标：竖条，表示“下一个音从这里开始”
+  function caretMark(xRight, by) {
+    return '<rect class="insertcaret" x="' + xRight + '" y="' + (by - 44) +
+      '" width="4" height="66" rx="2"/>';
+  }
+
   function noteGroup(p, song, sel, target, pending, graceEdit) {
     var n = p.note, x = p.x, by = p.by, w = p.w;
     var cx = x + G.numW / 2;
     var out = '<g class="note">';
 
     if (p.i === sel) {
+      // 正在编辑这个音符：实心高亮框
       out += '<rect class="selbox" x="' + (x - 4) + '" y="' + (by - 46) +
         '" width="' + (w + 6) + '" height="72" rx="9"/>';
     } else if (p.i === target) {
-      out += '<rect class="tgtbox" x="' + (x - 4) + '" y="' + (by - 46) +
-        '" width="' + (w + 6) + '" height="72" rx="9"/>';
+      // 准备在它后面插入下一个音符：闪烁光标
+      out += caretMark(x + w + 3, by);
     }
     if (pending && n.id === pending) {
       out += '<rect class="pendbox" x="' + (x - 4) + '" y="' + (by - 46) +
@@ -293,15 +304,11 @@ window.HLS = window.HLS || {};
       (by - 48) + '" width="' + (w + 8) + '" height="' + (74 + octTop * 9) +
       '" fill="transparent"/>';
 
-    // 倚音：可点击的小音符命中区（在音符命中区之上）
-    if (n.grace && n.pitch !== 0) {
+    // 倚音：正在选它的音高时高亮
+    if (n.grace && n.pitch !== 0 && p.i === graceEdit) {
       var ggx = cx - 13, ggy = by - 22;
-      if (p.i === graceEdit) {
-        out += '<rect class="graceedbox" x="' + (ggx - 12) + '" y="' + (ggy - 30) +
-          '" width="24" height="40" rx="7"/>';
-      }
-      out += '<rect class="ghit" data-grace="' + p.i + '" x="' + (ggx - 13) +
-        '" y="' + (ggy - 30) + '" width="26" height="42" fill="transparent"/>';
+      out += '<rect class="graceedbox" x="' + (ggx - 12) + '" y="' + (ggy - 30) +
+        '" width="24" height="40" rx="7"/>';
     }
 
     out += '</g>';
@@ -438,9 +445,11 @@ window.HLS = window.HLS || {};
 
   function buildContent(song, sel, target, pending, graceEdit, guide, pageInfo) {
     applyScale(song.scale);
-    var L = layout(song);
+    var compact = !!(pageInfo && pageInfo.compact); // 手机编辑视图：去掉标题页眉，把空间留给音符
+    var headerH = compact ? 0 : G.headerH;
+    var L = layout(song, headerH);
     var parts = ['<style>' + SVG_STYLE + '</style>'];
-    parts.push(header(song, pageInfo));
+    if (!compact) parts.push(header(song, pageInfo));
 
     var bi, ri;
     for (bi = 0; bi < L.bars.length; bi++) {
@@ -464,6 +473,11 @@ window.HLS = window.HLS || {};
     var pi;
     for (pi = 0; pi < L.place.length; pi++) {
       parts.push(noteGroup(L.place[pi], song, sel, target, pending, graceEdit));
+    }
+
+    // 空谱：在起始位置显示插入光标
+    if (guide && L.place.length === 0) {
+      parts.push(caretMark(G.padX + 2, headerH + G.baseline));
     }
 
     parts.push(slurs(song, L.place));
@@ -503,7 +517,178 @@ window.HLS = window.HLS || {};
     return segs;
   }
 
-  function mount(container, song, sel, target, pending, graceEdit, guide) {
+  // 预览图竖直方向绕「数字中心」对称取景：
+  // 无论上下有八度点/增时线/符号，数字始终落在预览正中 → 各按钮里的数字在同一水平面
+  function previewVB(by, minY, maxY, padY) {
+    var cy = by - 11;                     // 数字视觉中心（基线 by 上移约 11）
+    var top = minY - padY, bot = maxY + padY;
+    var half = Math.max(cy - top, bot - cy);
+    return { vy: cy - half, vh: 2 * half };
+  }
+
+  // 单音符「写法」预览图（用于工具栏按钮）
+  var FP_STYLE =
+    '.formpic{ display:block; }' +
+    '.formpic text{ font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif; }' +
+    '.formpic .fin{ font-size:30px; font-weight:600; fill:currentColor; }' +
+    '.formpic .sym-lab{ font-size:16px; font-weight:600; fill:currentColor; }' +
+    '.formpic .sym-glide{ fill:none; stroke:currentColor; stroke-width:1.8; }' +
+    '.formpic .sym-glide-head{ fill:currentColor; }' +
+    '.formpic .sym-grace{ font-size:19px; font-weight:600; fill:currentColor; }' +
+    '.formpic .sym-grace-slash{ stroke:currentColor; stroke-width:1.6; }' +
+    '.formpic .sym-bo{ stroke:currentColor; stroke-width:1.8; }' +
+    '.formpic .odot{ fill:currentColor; }' +
+    '.formpic .dash{ stroke:currentColor; stroke-width:2.4; stroke-linecap:round; }' +
+    '.formpic .uline{ stroke:currentColor; stroke-width:1.8; }';
+
+  function formPreview(formStr, pitch, octave, dur, dotted) {
+    pitch = (typeof pitch === 'number') ? pitch : 5;
+    octave = octave || 0;
+    dur = dur || 'quarter';
+    dotted = !!dotted;
+
+    var marks = {
+      whole: { beats: 4, u: 0 }, half: { beats: 2, u: 0 }, quarter: { beats: 1, u: 0 },
+      eighth: { beats: 0.5, u: 1 }, sixteenth: { beats: 0.25, u: 2 }
+    };
+    var info = marks[dur] || marks.quarter;
+    var dashes = info.beats >= 2 ? Math.round(info.beats - 1) : 0;
+    var u = info.u;
+    var numW = 26, dashW = 20;
+    var contentW = numW + dashes * dashW + (dotted ? 9 : 0);
+    var leftPad = 18, rightPad = 12;
+    var W = leftPad + contentW + rightPad;
+    var by = 90;
+    var cx = leftPad + numW / 2;
+
+    var keys = formStr ? formStr.split(',').filter(Boolean) : [];
+    var note = {
+      pitch: pitch, octave: octave, dur: dur, dotted: dotted,
+      orn: { up: false, down: false, single: false, double: false, triple: false,
+             breath: false, da: false, bo: false, trill: false },
+      grace: null
+    };
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      if (k === 'grace') note.grace = { pitch: (pitch > 1 ? pitch - 1 : 7), octave: octave };
+      else if (note.orn.hasOwnProperty(k)) note.orn[k] = true;
+    }
+    var octTop = Math.max(0, octave);
+    var sym = HLS.symbols.draw(note, {
+      x: cx - numW / 2, w: numW, cx: cx, by: by, octTop: octTop, numW: numW, dashW: dashW
+    });
+
+    var out = '<text class="fin" x="' + cx + '" y="' + by + '" text-anchor="middle">' +
+      (pitch === 0 ? '0' : String(pitch)) + '</text>';
+    var kk;
+    if (dashes > 0) {
+      var sx = cx + numW / 2 + 4;
+      for (kk = 0; kk < dashes; kk++) {
+        var dx = sx + kk * dashW;
+        out += '<line class="dash" x1="' + dx + '" y1="' + (by - 9) +
+          '" x2="' + (dx + dashW - 8) + '" y2="' + (by - 9) + '"/>';
+      }
+    }
+    if (dotted) out += '<circle class="odot" cx="' + (cx + numW / 2 + 6) + '" cy="' + (by - 9) + '" r="3"/>';
+    if (u > 0) {
+      for (kk = 0; kk < u; kk++) {
+        out += '<line class="uline" x1="' + (cx - numW / 2) + '" y1="' + (by + 8 + kk * 6) +
+          '" x2="' + (cx + numW / 2) + '" y2="' + (by + 8 + kk * 6) + '"/>';
+      }
+    }
+    if (pitch !== 0) {
+      var d;
+      if (octave > 0) {
+        for (d = 0; d < octave; d++) out += '<circle class="odot" cx="' + cx + '" cy="' + (by - 28 - d * 8) + '" r="3"/>';
+      } else if (octave < 0) {
+        var baseY = by + 16 + u * 6;
+        for (d = 0; d < -octave; d++) out += '<circle class="odot" cx="' + cx + '" cy="' + (baseY + d * 8) + '" r="3"/>';
+      }
+    }
+    out += sym.html;
+
+    // 竖直方向按内容收紧，预览里的音符/符号才会显得更大
+    var minY = by - 22;                                   // 数字上沿
+    if (octave > 0) minY = Math.min(minY, by - 31 - (octave - 1) * 8);
+    if (dashes > 0 || dotted) minY = Math.min(minY, by - 12);
+    minY = Math.min(minY, sym.top);
+    var maxY = by + 6;
+    if (u > 0) maxY = Math.max(maxY, by + 8 + (u - 1) * 6 + 3);
+    if (octave < 0) {
+      var lb = by + 16 + u * 6;
+      maxY = Math.max(maxY, lb + (-octave - 1) * 8 + 3);
+    }
+    // 写法预览竖直方向按内容紧凑取景（音符总在最下方，视觉上自然对齐），四周留一点边距
+    var padY = 6;
+    var vy = minY - padY;
+    var vh = (maxY + padY) - vy;
+
+    return '<svg class="formpic" viewBox="0 ' + vy + ' ' + W + ' ' + vh + '" aria-hidden="true">' +
+      '<style>' + FP_STYLE + '</style>' + out + '</svg>';
+  }
+
+  // 单音符预览（音高/八度/时值），用于音区、时值按钮
+  function notePreview(pitch, octave, dur, dotted) {
+    pitch = (typeof pitch === 'number') ? pitch : 5;
+    octave = octave || 0;
+    var marks = {
+      whole: { beats: 4, u: 0 }, half: { beats: 2, u: 0 }, quarter: { beats: 1, u: 0 },
+      eighth: { beats: 0.5, u: 1 }, sixteenth: { beats: 0.25, u: 2 }
+    };
+    var info = marks[dur] || marks.quarter;
+    var dashes = info.beats >= 2 ? Math.round(info.beats - 1) : 0;
+    var u = info.u;
+    var numW = 26, dashW = 20;
+    var contentW = numW + dashes * dashW + (dotted ? 9 : 0);
+    var W = Math.max(72, contentW + 12);
+    var by = 72;
+    var cx = (W - contentW) / 2 + numW / 2;
+    var out = '<text class="fin" x="' + cx + '" y="' + by + '" text-anchor="middle">' +
+      (pitch === 0 ? '0' : String(pitch)) + '</text>';
+    var k;
+    if (dashes > 0) {
+      var sx = cx + numW / 2 + 4;
+      for (k = 0; k < dashes; k++) {
+        var dx = sx + k * dashW;
+        out += '<line class="dash" x1="' + dx + '" y1="' + (by - 9) +
+          '" x2="' + (dx + dashW - 8) + '" y2="' + (by - 9) + '"/>';
+      }
+    }
+    if (dotted) {
+      out += '<circle class="odot" cx="' + (cx + numW / 2 + 6) + '" cy="' + (by - 9) + '" r="3"/>';
+    }
+    if (u > 0) {
+      for (k = 0; k < u; k++) {
+        out += '<line class="uline" x1="' + (cx - numW / 2) + '" y1="' + (by + 8 + k * 6) +
+          '" x2="' + (cx + numW / 2) + '" y2="' + (by + 8 + k * 6) + '"/>';
+      }
+    }
+    if (pitch !== 0) {
+      var d;
+      if (octave > 0) {
+        for (d = 0; d < octave; d++) out += '<circle class="odot" cx="' + cx + '" cy="' + (by - 28 - d * 8) + '" r="3"/>';
+      } else if (octave < 0) {
+        var baseY = by + 16 + u * 6;
+        for (d = 0; d < -octave; d++) out += '<circle class="odot" cx="' + cx + '" cy="' + (baseY + d * 8) + '" r="3"/>';
+      }
+    }
+    // 竖直方向按内容收紧，预览才会尽量大
+    var minY = by - 22;
+    if (octave > 0) minY = Math.min(minY, by - 31 - (octave - 1) * 8);
+    if (dashes > 0 || dotted) minY = Math.min(minY, by - 12);
+    var maxY = by + 6;
+    if (u > 0) maxY = Math.max(maxY, by + 8 + (u - 1) * 6 + 3);
+    if (octave < 0) {
+      var lb = by + 16 + u * 6;
+      maxY = Math.max(maxY, lb + (-octave - 1) * 8 + 3);
+    }
+    var vb = previewVB(by, minY, maxY, 5);
+
+    return '<svg class="formpic" viewBox="0 ' + vb.vy + ' ' + W + ' ' + vb.vh + '" aria-hidden="true">' +
+      '<style>' + FP_STYLE + '</style>' + out + '</svg>';
+  }
+
+  function mount(container, song, sel, target, pending, graceEdit, guide, viewScale) {
     if (sel === undefined) sel = -1;
     if (target === undefined) target = -1;
     var segs = splitPages(song);
@@ -514,11 +699,12 @@ window.HLS = window.HLS || {};
       var seg = segs[p];
       var off = seg.offset, len = seg.notes.length;
       var sub = subSong(song, seg.notes);
+      if (viewScale) sub.scale = viewScale; // 屏幕编辑视图可用独立比例，不影响打印
       var lsel = (sel >= off && sel < off + len) ? sel - off : -1;
       var ltgt = (target >= off && target < off + len) ? target - off : -1;
       var lgr = (graceEdit >= off && graceEdit < off + len) ? graceEdit - off : -1;
       var r = buildContent(sub, lsel, ltgt, pending, lgr, guide !== false,
-        { index: p, total: segs.length });
+        { index: p, total: segs.length, compact: !!viewScale });
 
       var page = document.createElement('div');
       page.className = 'paper page';
@@ -537,13 +723,17 @@ window.HLS = window.HLS || {};
     return { pages: segs.length, fits: !anyNotFit, H: firstInfo ? firstInfo.H : 0 };
   }
 
-  function buildSvg(song, sel, target, pending, graceEdit) {
-    if (sel === undefined) sel = -1;
-    if (target === undefined) target = -1;
-    var r = buildContent(song, sel, target, pending, graceEdit, false);
-    return '<svg xmlns="http://www.w3.org/2000/svg" class="scoresvg" viewBox="0 0 ' +
-      r.W + ' ' + r.H + '" width="' + r.W + '" height="' + r.H + '">' +
-      r.content + '</svg>';
+  // 按打印比例 song.scale 计算分页与“是否放得下”（与屏幕编辑比例无关）
+  function fitInfo(song) {
+    var segs = splitPages(song);
+    var anyNotFit = false;
+    for (var p = 0; p < segs.length; p++) {
+      var sub = subSong(song, segs[p].notes);
+      var r = buildContent(sub, -1, -1, null, -1, false, { index: p, total: segs.length });
+      if (!r.fits) anyNotFit = true;
+    }
+    applyScale(song.scale); // 复位全局比例，避免影响后续渲染
+    return { pages: segs.length, fits: !anyNotFit };
   }
 
   // 打印后该比例下乐谱的高度（mm）
@@ -621,8 +811,9 @@ window.HLS = window.HLS || {};
   }
 
   HLS.render = {
-    mount: mount, buildSvg: buildSvg, G: G,
+    mount: mount, G: G,
     applyScale: applyScale, fitScale: fitScale, fitScale2: fitScale2,
-    printedHeight: printedHeight
+    printedHeight: printedHeight, fitInfo: fitInfo,
+    formPreview: formPreview, notePreview: notePreview
   };
 })(window.HLS);

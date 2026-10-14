@@ -64,8 +64,12 @@ window.HLS = window.HLS || {};
       song: saved || HLS.model.makeSong(),
       sel: -1,
       mode: 'append',
+      step: 'pitch',
       slurStart: null,
       graceEdit: -1,
+      building: false,
+      brush: false,
+      brushForm: null,
       defaults: { octave: 0, dur: 'quarter', dotted: false },
       undo: [],
       redo: []
@@ -79,8 +83,55 @@ window.HLS = window.HLS || {};
     bindKeyboard();
     bindSvg();
     bindFile();
+    bindPreview();
     render();
     autoScrollReady = true; // 初次加载不自动跳到底部，用户开始编辑后才跟随
+
+    // 屏幕尺寸变化（旋转、地址栏收起等）后重算编辑视图比例
+    var resizeTimer;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(render, 150);
+    });
+  }
+
+  // 「写法 / 音区 / 时值」按钮上的图案，会跟随当前音符同步变化
+  var previewKey = null;
+  var previewLabelsDone = false;
+  var OCT_REP = { 'octave-down': -1, 'octave-mid': 0, 'octave-up': 1 };
+
+  function updatePreviews() {
+    var sel = '[data-form],[data-dur],[data-act="dot"],' +
+      '[data-act="octave-down"],[data-act="octave-mid"],[data-act="octave-up"]';
+    if (!previewLabelsDone) {
+      previewLabelsDone = true;
+      $all(sel).forEach(function (b) {
+        var lab = (b.textContent || '').trim();
+        if (lab) { b.setAttribute('title', lab); b.setAttribute('aria-label', lab); }
+      });
+    }
+    var node = (state.mode === 'edit' && state.sel >= 0) ? state.song.notes[state.sel] : null;
+    var last = state.song.notes.length ? state.song.notes[state.song.notes.length - 1] : null;
+    var pitch = node ? node.pitch : (last ? last.pitch : 5);
+    var oct = node ? (node.octave || 0) : (state.defaults.octave || 0);
+    var dur = node ? node.dur : state.defaults.dur;
+    var dotted = node ? !!node.dotted : !!state.defaults.dotted;
+    var key = pitch + ':' + oct + ':' + dur + ':' + dotted;
+    if (key === previewKey) return;
+    previewKey = key;
+
+    $all('[data-form]').forEach(function (b) {
+      b.innerHTML = HLS.render.formPreview(b.getAttribute('data-form'), pitch, oct, dur, dotted);
+    });
+    $all('[data-act="octave-down"],[data-act="octave-mid"],[data-act="octave-up"]').forEach(function (b) {
+      b.innerHTML = HLS.render.notePreview(pitch, OCT_REP[b.getAttribute('data-act')], 'quarter', false);
+    });
+    $all('[data-dur]').forEach(function (b) {
+      b.innerHTML = HLS.render.notePreview(pitch, oct, b.getAttribute('data-dur'), false);
+    });
+    $all('[data-act="dot"]').forEach(function (b) {
+      b.innerHTML = HLS.render.notePreview(pitch, oct, dur, true);
+    });
   }
 
   // ---------- 状态与提交 ----------
@@ -112,16 +163,52 @@ window.HLS = window.HLS || {};
     return i >= 0 ? state.song.notes[i] : null;
   }
 
+  // 光标状态：给“正在编辑的音符”画实心框，给“下一个音的位置”画闪烁竖线
+  function cursorArgs() {
+    var editing = state.mode === 'edit' && state.sel >= 0 &&
+      !(state.building && state.step === 'pitch');
+    var sel = editing ? state.sel : -1;
+    var target = -1;
+    if (!editing &&
+        (state.mode === 'append' || (state.building && state.step === 'pitch'))) {
+      target = state.song.notes.length - 1;
+    }
+    var graceHL = (state.step === 'grace' && state.mode === 'edit' && state.sel >= 0 &&
+      state.song.notes[state.sel] && state.song.notes[state.sel].grace) ? state.sel : -1;
+    return { sel: sel, target: target, grace: graceHL };
+  }
+
+  // 手机编辑视图的独立放大比例（不影响打印）：目标字号约 26px
+  var TARGET_VIEW_FONT = 26;
+  function phoneViewScale() {
+    if (!window.matchMedia || !window.matchMedia('(max-width: 900px)').matches) return null;
+    var stage = document.querySelector('.stage');
+    var w = stage ? stage.clientWidth : window.innerWidth;
+    var svgW = Math.max(200, w - 28); // 纸张内宽 ≈ 谱面区宽 - 纸张左右内边距
+    var vs = TARGET_VIEW_FONT * 880 / (30 * svgW); // numFont=30 / 基准宽 880
+    if (vs < 1) vs = 1;
+    return Math.min(3, Math.max(vs, state.song.scale || 1));
+  }
+
+  function remount() {
+    var c = cursorArgs();
+    HLS.render.mount(stageEl, state.song, c.sel, c.target,
+      state.slurStart, c.grace, true, phoneViewScale());
+  }
+
   // ---------- 渲染与状态显示 ----------
 
   function render() {
-    var sel = state.mode === 'edit' ? state.sel : -1;
-    var target = state.mode === 'append' ? state.song.notes.length - 1 : -1;
-    var info = HLS.render.mount(stageEl, state.song, sel, target,
-      state.slurStart, state.graceEdit, true);
-    updateScaleUI(info);
+    if (state.step === 'grace' && !hasGrace()) state.step = 'pitch';
+    document.body.setAttribute('data-step', state.step || 'pitch');
+    var c = cursorArgs();
+    var finfo = HLS.render.fitInfo(state.song); // 按打印比例算分页/是否放得下
+    HLS.render.mount(stageEl, state.song, c.sel, c.target,
+      state.slurStart, c.grace, true, phoneViewScale());
+    updateScaleUI(finfo);
     updateStatus();
     updateMetaInputs();
+    updatePreviews();
     updateToolbarActive();
     scrollActiveIntoView();
   }
@@ -176,15 +263,32 @@ window.HLS = window.HLS || {};
   function updateStatus() {
     var el = $('#status-text');
     if (el) {
-      if (state.graceEdit >= 0) {
-        el.textContent = '正在设置倚音：按 1–7 选音，↑↓ 调八度，点别处结束';
-      } else if (state.slurStart != null) {
+      if (state.slurStart != null) {
         el.textContent = '连音线：已选起点（橙色框），请点击要连接的另一个音符';
-      } else if (state.mode === 'edit' && state.sel >= 0) {
-        el.textContent = '正在编辑第 ' + (state.sel + 1) + ' 个音符（点空白处可继续添加）';
       } else {
-        el.textContent = '正在添加新音符 · 共 ' + state.song.notes.length + ' 个';
+        var stepTxt = {
+          pitch: '① 点数字 1–7 输入音符', octave: '② 可选：调这个音的音区',
+          dur: '③ 可选：调这个音的时值', form: '④ 可选：点一下套用写法',
+          grace: '⑤ 选「倚音」的音高（小音符）'
+        }[state.step] || '';
+        var where = '';
+        if (state.building) {
+          // 回到①时，上一个音已输完，显示的是“即将输入的下一个”
+          var num = (state.step === 'pitch')
+            ? (state.song.notes.length + 1)
+            : (state.sel + 1);
+          where = '（正在输入第 ' + num + ' 个音符）';
+        } else if (state.mode === 'edit' && state.sel >= 0) {
+          where = '（编辑第 ' + (state.sel + 1) + ' 个）';
+        }
+        el.textContent = stepTxt + ' ' + where;
       }
+    }
+    var pt = $('#pitch-title');
+    if (pt) {
+      pt.textContent = (state.step === 'grace')
+        ? '选「倚音」的音高（小音符）'
+        : '① 音符（点数字加一个）';
     }
     var u = $('[data-act="undo"]');
     var r = $('[data-act="redo"]');
@@ -218,8 +322,30 @@ window.HLS = window.HLS || {};
     if (ind) {
       ind.textContent = oct === 0 ? '中音' : (oct > 0 ? '高音 +' + oct : '低音 ' + oct);
     }
+    $all('[data-act="octave-down"]').forEach(function (b) { b.classList.toggle('active', oct < 0); });
+    $all('[data-act="octave-mid"]').forEach(function (b) { b.classList.toggle('active', oct === 0); });
+    $all('[data-act="octave-up"]').forEach(function (b) { b.classList.toggle('active', oct > 0); });
+    var activePitch = null;
+    if (state.step === 'grace' && ctx && ctx.grace) {
+      activePitch = ctx.grace.pitch;
+    } else if (ctx) {
+      activePitch = ctx.pitch;
+    }
+    $all('[data-note]').forEach(function (b) {
+      b.classList.toggle('active', activePitch != null && (+b.getAttribute('data-note') === activePitch));
+    });
 
     var tgt = targetNote();
+    var curForm = tgt ? formKeysOf(tgt).join(',') : null;
+    $all('[data-form]').forEach(function (b) {
+      var keys = b.getAttribute('data-form');
+      var norm = keys ? keys.split(',').filter(Boolean).sort().join(',') : '';
+      b.classList.toggle('active', tgt != null && norm === curForm);
+    });
+    $all('[data-act="brush"]').forEach(function (b) {
+      b.classList.toggle('active', !!state.brush);
+    });
+
     $all('[data-orn]').forEach(function (b) {
       var key = b.getAttribute('data-orn');
       var on = false;
@@ -236,20 +362,35 @@ window.HLS = window.HLS || {};
   // ---------- 编辑动作 ----------
 
   function addNote(pitch) {
-    if (state.graceEdit >= 0 && state.song.notes[state.graceEdit] &&
-        state.song.notes[state.graceEdit].grace) {
+    if (state.step === 'grace') {
       if (pitch === 0) return; // 倚音不能是休止
-      var gi = state.graceEdit;
-      commit(function () { state.song.notes[gi].grace.pitch = pitch; });
+      var gi = (state.mode === 'edit' && state.sel >= 0) ? state.sel : state.song.notes.length - 1;
+      if (gi < 0 || !state.song.notes[gi].grace) return;
+      commit(function () {
+        state.song.notes[gi].grace.pitch = pitch;
+        state.step = 'pitch'; // 倚音音高选完，回到“选音符”输入下一个
+      });
       return;
     }
-    if (state.mode === 'edit' && state.sel >= 0 && state.sel < state.song.notes.length) {
+    if (state.mode === 'edit' && state.sel >= 0 &&
+        state.sel < state.song.notes.length && !state.building) {
+      // 修改已选（较早的）音符的音高
       var idx = state.sel;
-      commit(function () { state.song.notes[idx].pitch = pitch; });
-    } else {
       commit(function () {
-        state.song.notes.push(HLS.model.makeNote(
-          pitch, state.defaults.octave, state.defaults.dur, state.defaults.dotted));
+        state.song.notes[idx].pitch = pitch;
+        state.step = 'octave';
+      });
+    } else {
+      // 追加新音符并立即上屏，进入“构建中”：随后的音区/时值/写法都在改它
+      commit(function () {
+        var n = HLS.model.makeNote(
+          pitch, state.defaults.octave, state.defaults.dur, state.defaults.dotted);
+        if (state.brush && state.brushForm) applyForm(n, state.brushForm);
+        state.song.notes.push(n);
+        state.sel = state.song.notes.length - 1;
+        state.mode = 'edit';
+        state.building = true;
+        state.step = 'octave';
       });
     }
   }
@@ -258,49 +399,43 @@ window.HLS = window.HLS || {};
     if (!HLS.model.DURS[dur]) return;
     if (state.mode === 'edit' && state.sel >= 0) {
       var idx = state.sel;
-      commit(function () { state.song.notes[idx].dur = dur; });
+      commit(function () {
+        state.song.notes[idx].dur = dur;
+        state.step = 'form';
+      });
     } else {
       state.defaults.dur = dur;
-      updateToolbarActive();
-      HLS.toast('新音符时值：' + HLS.model.DURS[dur].label);
+      state.step = 'form';
+      render();
     }
   }
 
   function octaveBy(delta) {
-    if (state.graceEdit >= 0 && state.song.notes[state.graceEdit] &&
-        state.song.notes[state.graceEdit].grace) {
-      var gi = state.graceEdit;
-      commit(function () {
-        var g = state.song.notes[gi].grace;
-        g.octave = clamp(g.octave + delta, -1, 1);
-      });
-      return;
-    }
     if (state.mode === 'edit' && state.sel >= 0) {
       var idx = state.sel;
       commit(function () {
         var n = state.song.notes[idx];
         n.octave = clamp(n.octave + delta, -2, 2);
+        state.step = 'dur';
       });
     } else {
       state.defaults.octave = clamp(state.defaults.octave + delta, -2, 2);
-      updateToolbarActive();
+      state.step = 'dur';
+      render();
     }
   }
 
   function octaveSet(v) {
-    if (state.graceEdit >= 0 && state.song.notes[state.graceEdit] &&
-        state.song.notes[state.graceEdit].grace) {
-      var gi = state.graceEdit;
-      commit(function () { state.song.notes[gi].grace.octave = v; });
-      return;
-    }
     if (state.mode === 'edit' && state.sel >= 0) {
       var idx = state.sel;
-      commit(function () { state.song.notes[idx].octave = v; });
+      commit(function () {
+        state.song.notes[idx].octave = v;
+        state.step = 'dur';
+      });
     } else {
       state.defaults.octave = v;
-      updateToolbarActive();
+      state.step = 'dur';
+      render();
     }
   }
 
@@ -332,7 +467,7 @@ window.HLS = window.HLS || {};
           n.grace = null;
           if (state.graceEdit === idx) state.graceEdit = -1;
         } else {
-          n.grace = { pitch: n.pitch >= 7 ? 1 : n.pitch + 1, octave: n.octave || 0 };
+          n.grace = defaultGrace(n);
         }
       });
       return;
@@ -341,6 +476,77 @@ window.HLS = window.HLS || {};
       var n = state.song.notes[idx];
       if (n.orn.hasOwnProperty(key)) n.orn[key] = !n.orn[key];
     });
+  }
+
+  // ---------- 「写法」一键组合 ----------
+  var ORN_KEYS = ['up', 'down', 'single', 'double', 'triple', 'breath', 'da', 'bo', 'trill'];
+
+  function defaultGrace(n) {
+    // 默认取下方邻音（葫芦丝常见），可再点小音符自由改
+    return { pitch: n.pitch > 1 ? n.pitch - 1 : 7, octave: n.octave || 0 };
+  }
+
+  function formKeysOf(note) {
+    var keys = [];
+    for (var i = 0; i < ORN_KEYS.length; i++) {
+      if (note.orn && note.orn[ORN_KEYS[i]]) keys.push(ORN_KEYS[i]);
+    }
+    if (note.grace) keys.push('grace');
+    return keys.sort();
+  }
+
+  function applyForm(note, keys) {
+    var i;
+    for (i = 0; i < ORN_KEYS.length; i++) note.orn[ORN_KEYS[i]] = false;
+    note.grace = null;
+    for (i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      if (k === 'grace') note.grace = defaultGrace(note);
+      else if (note.orn.hasOwnProperty(k)) note.orn[k] = true;
+    }
+  }
+
+  function applyFormToTarget(formStr) {
+    var keys = formStr ? formStr.split(',') : [];
+    var idx = targetIndex();
+    if (idx < 0) {
+      if (state.brush) {
+        state.brushForm = keys.slice();
+        state.step = 'pitch';
+        render();
+        HLS.toast('写法已记住，输入音符就带上');
+      } else {
+        HLS.toast('请先添加音符');
+      }
+      return;
+    }
+    commit(function () {
+      applyForm(state.song.notes[idx], keys);
+      if (state.brush) state.brushForm = keys.slice();
+      // 带倚音的写法 → 进入“选倚音音高”这一步；否则这个音完成，回到选音符
+      state.step = (keys.indexOf('grace') >= 0) ? 'grace' : 'pitch';
+    });
+  }
+
+  function toggleBrush() {
+    if (state.brush) {
+      state.brush = false; state.brushForm = null;
+    } else {
+      var t = targetNote();
+      state.brush = true;
+      state.brushForm = t ? formKeysOf(t) : [];
+    }
+    render();
+    HLS.toast(state.brush ? '已开启「沿用此写法」：之后输入的音自动带上' : '已关闭沿用');
+  }
+
+  function toggleMore() {
+    var open = document.body.classList.toggle('more-open');
+    var btn = document.querySelector('[data-act="more"]');
+    if (btn) {
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.textContent = open ? '收起更多符号 ▴' : '更多符号 ▾（单独加 / 自由组合）';
+    }
   }
 
   function findNoteById(id) {
@@ -380,18 +586,26 @@ window.HLS = window.HLS || {};
 
   function del() {
     var idx = targetIndex();
-    if (idx < 0) return;
+    if (idx < 0) { HLS.toast('没有可删除的音符'); return; }
+    HLS.confirm('确定删除第 ' + (idx + 1) + ' 个音符吗？', '删除', function () {
+      doDelete(idx);
+    });
+  }
+
+  function doDelete(idx) {
     commit(function () {
       var removed = state.song.notes[idx];
       state.song.notes.splice(idx, 1);
       state.song.notes.forEach(function (n) { if (n.slurTo === removed.id) n.slurTo = null; });
       if (state.slurStart === removed.id) state.slurStart = null;
       state.graceEdit = -1;
+      state.building = false;
       if (state.mode === 'edit') {
         state.sel = Math.min(idx, state.song.notes.length - 1);
         if (state.sel < 0) state.mode = 'append';
       }
     });
+    HLS.toast('已删除，可点「撤销」恢复');
   }
 
   function toggleLineBreak() {
@@ -405,6 +619,8 @@ window.HLS = window.HLS || {};
     state.sel = -1;
     state.slurStart = null;
     state.graceEdit = -1;
+    state.building = false;
+    state.step = 'pitch';
     render();
   }
 
@@ -422,6 +638,30 @@ window.HLS = window.HLS || {};
     commit(function () { state.song.timeSig = HLS.model.TIME_SIGS[i]; });
   }
 
+  var STEP_ORDER = ['pitch', 'octave', 'dur', 'form', 'grace'];
+  function hasGrace() {
+    var t = targetNote();
+    return !!(t && t.grace);
+  }
+  function stepNext() {
+    var i = STEP_ORDER.indexOf(state.step), n = STEP_ORDER.length;
+    for (var k = 1; k <= n; k++) {
+      var s = STEP_ORDER[(i + k) % n];
+      if (s === 'grace' && !hasGrace()) continue; // 没有倚音就跳过这一步
+      state.step = s; break;
+    }
+    render();
+  }
+  function stepPrev() {
+    var i = STEP_ORDER.indexOf(state.step), n = STEP_ORDER.length;
+    for (var k = 1; k <= n; k++) {
+      var s = STEP_ORDER[(i - k + n * 2) % n];
+      if (s === 'grace' && !hasGrace()) continue;
+      state.step = s; break;
+    }
+    render();
+  }
+
   function doAction(act) {
     switch (act) {
       case 'octave-down': octaveBy(-1); break;
@@ -433,6 +673,10 @@ window.HLS = window.HLS || {};
       case 'delete': del(); break;
       case 'linebreak': toggleLineBreak(); break;
       case 'append': toAppend(); break;
+      case 'step-prev': stepPrev(); break;
+      case 'step-next': stepNext(); break;
+      case 'brush': toggleBrush(); break;
+      case 'more': toggleMore(); break;
       case 'key-down': cycleKey(-1); break;
       case 'key-up': cycleKey(1); break;
       case 'timesig-cycle': cycleTimeSig(); break;
@@ -443,22 +687,32 @@ window.HLS = window.HLS || {};
     switch (kind) {
       case 'print': HLS.exporters.print(); break;
       case 'pdf': HLS.exporters.pdf(); break;
-      case 'png': HLS.exporters.png(state.song); break;
+      case 'preview': openPreview(); break;
       case 'save':
         HLS.storage.downloadJSON(state.song);
         HLS.toast('已保存到文件');
         break;
       case 'open':
-        $('#file-input').click();
+        if (state.song.notes.length) {
+          HLS.confirm('打开文件会替换当前乐谱，确定继续吗？', '打开', function () {
+            $('#file-input').click();
+          });
+        } else {
+          $('#file-input').click();
+        }
         break;
       case 'new':
-        if (state.song.notes.length && !window.confirm('确定要清空当前乐谱吗？')) return;
-        commit(function () {
-          state.song = HLS.model.makeSong();
-          state.mode = 'append';
-          state.sel = -1;
-          state.slurStart = null;
-          state.graceEdit = -1;
+        if (!state.song.notes.length) { HLS.toast('当前已经是空乐谱'); return; }
+        HLS.confirm('确定要清空当前乐谱吗？清空后可点「撤销」恢复。', '清空', function () {
+          commit(function () {
+            state.song = HLS.model.makeSong();
+            state.mode = 'append';
+            state.sel = -1;
+            state.slurStart = null;
+            state.graceEdit = -1;
+            state.building = false;
+            state.step = 'pitch';
+          });
         });
         break;
     }
@@ -471,6 +725,7 @@ window.HLS = window.HLS || {};
     normalize(state.song);
     state.slurStart = null;
     state.graceEdit = -1;
+    state.building = false;
     clampSel();
     afterChange();
   }
@@ -482,6 +737,7 @@ window.HLS = window.HLS || {};
     normalize(state.song);
     state.slurStart = null;
     state.graceEdit = -1;
+    state.building = false;
     clampSel();
     afterChange();
   }
@@ -497,27 +753,19 @@ window.HLS = window.HLS || {};
     var t = $('#meta-title');
     if (t) t.addEventListener('input', function () {
       state.song.title = this.value; scheduleSave();
-      HLS.render.mount(stageEl, state.song,
-        state.mode === 'edit' ? state.sel : -1,
-        state.mode === 'append' ? state.song.notes.length - 1 : -1,
-        state.slurStart, state.graceEdit);
+      remount();
     });
     var a = $('#meta-author');
     if (a) a.addEventListener('input', function () {
       state.song.author = this.value; scheduleSave();
-      HLS.render.mount(stageEl, state.song,
-        state.mode === 'edit' ? state.sel : -1,
-        state.mode === 'append' ? state.song.notes.length - 1 : -1,
-        state.slurStart, state.graceEdit);
+      remount();
     });
     var tp = $('#meta-tempo');
     if (tp) tp.addEventListener('input', function () {
       var v = parseInt(this.value, 10);
       if (isNaN(v)) return;
       state.song.tempo = clamp(v, 20, 300); scheduleSave();
-      HLS.render.mount(stageEl, state.song, -1,
-        state.mode === 'append' ? state.song.notes.length - 1 : -1,
-        state.slurStart, state.graceEdit);
+      remount();
     });
   }
 
@@ -528,15 +776,28 @@ window.HLS = window.HLS || {};
     if (af2) af2.addEventListener('click', autoFit2);
   }
 
-  // 手机端「菜单」：显示/隐藏 曲谱信息 + 文件操作
+  // 手机端「菜单」：底部工具栏的按钮控制 曲谱信息 + 文件操作的展开/收起
+  function toggleMenu(open) {
+    document.body.classList.toggle('menu-open', open);
+    var a = $('#menu-button'), b = $('#menu-toggle');
+    if (a) {
+      a.setAttribute('aria-expanded', open ? 'true' : 'false');
+      a.textContent = open ? '✕ 关闭菜单' : '☰ 菜单';
+    }
+    if (b) {
+      b.setAttribute('aria-expanded', open ? 'true' : 'false');
+      b.textContent = open ? '✕ 关闭' : '☰ 菜单';
+    }
+  }
+
   function bindMenu() {
-    var btn = $('#menu-toggle');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      var open = document.body.classList.toggle('menu-open');
-      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      btn.textContent = open ? '✕ 关闭' : '☰ 菜单';
-    });
+    var mb = $('#menu-button');
+    var mt = $('#menu-toggle');
+    function onClick() {
+      toggleMenu(!document.body.classList.contains('menu-open'));
+    }
+    if (mb) mb.addEventListener('click', onClick);
+    if (mt) mt.addEventListener('click', onClick);
   }
 
   function autoFit() {
@@ -564,10 +825,11 @@ window.HLS = window.HLS || {};
   function bindToolbar() {
     document.addEventListener('click', function (e) {
       var el = e.target.closest &&
-        e.target.closest('[data-note],[data-dur],[data-orn],[data-act],[data-file]');
+        e.target.closest('[data-note],[data-dur],[data-orn],[data-form],[data-act],[data-file]');
       if (!el) return;
       if (el.hasAttribute('data-note')) { addNote(+el.getAttribute('data-note')); return; }
       if (el.hasAttribute('data-dur')) { setDuration(el.getAttribute('data-dur')); return; }
+      if (el.hasAttribute('data-form')) { applyFormToTarget(el.getAttribute('data-form')); return; }
       if (el.hasAttribute('data-orn')) { toggleOrn(el.getAttribute('data-orn')); return; }
       if (el.hasAttribute('data-act')) { doAction(el.getAttribute('data-act')); return; }
       if (el.hasAttribute('data-file')) { doFile(el.getAttribute('data-file')); return; }
@@ -579,16 +841,9 @@ window.HLS = window.HLS || {};
       var t = e.target;
       var pageEl = (t && t.closest) ? t.closest('.page') : null;
       var off = pageEl ? (parseInt(pageEl.getAttribute('data-offset'), 10) || 0) : 0;
-      var gidx = t && t.getAttribute ? t.getAttribute('data-grace') : null;
-      if (gidx !== null && gidx !== undefined && gidx !== '') {
-        state.graceEdit = off + (+gidx);
-        state.mode = 'edit';
-        state.sel = off + (+gidx);
-        render();
-        return;
-      }
       var idx = t && t.getAttribute ? t.getAttribute('data-index') : null;
       state.graceEdit = -1;
+      state.building = false;
       if (idx !== null && idx !== undefined && idx !== '') {
         state.mode = 'edit';
         state.sel = off + (+idx);
@@ -603,6 +858,9 @@ window.HLS = window.HLS || {};
 
   function bindKeyboard() {
     document.addEventListener('keydown', function (e) {
+      var dlg = document.getElementById('dialog');
+      if (dlg && dlg.classList.contains('open')) return; // 对话框打开时不响应打谱快捷键
+      if (document.body.classList.contains('preview-open')) return; // 打印预览打开时同理
       var tag = (e.target.tagName || '').toLowerCase();
       if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
       var k = e.key;
@@ -620,6 +878,39 @@ window.HLS = window.HLS || {};
       if ((e.ctrlKey || e.metaKey) && (k === 'y' || k === 'Y')) {
         e.preventDefault(); redo(); return;
       }
+    });
+  }
+
+  // ---------- 打印预览 ----------
+  function openPreview() {
+    var el = $('#preview'), body = $('#preview-pages');
+    if (!el || !body) return;
+    if (!state.song.notes.length) { HLS.toast('请先输入音符'); return; }
+    // 按打印比例渲染（不带手机编辑放大、保留页眉），不显示光标/选中框
+    HLS.render.mount(body, state.song, -1, -1, null, -1, false);
+    el.hidden = false;
+    document.body.classList.add('preview-open');
+    var pb = $('#preview-print');
+    if (pb) pb.focus();
+  }
+
+  function closePreview() {
+    var el = $('#preview');
+    if (!el || el.hidden) return;
+    el.hidden = true;
+    document.body.classList.remove('preview-open');
+    var body = $('#preview-pages');
+    if (body) body.innerHTML = '';
+  }
+
+  function bindPreview() {
+    var close = $('#preview-close');
+    var print = $('#preview-print');
+    if (close) close.addEventListener('click', closePreview);
+    if (print) print.addEventListener('click', function () { window.print(); });
+    document.addEventListener('keydown', function (e) {
+      if (!document.body.classList.contains('preview-open')) return;
+      if (e.key === 'Escape') { e.preventDefault(); closePreview(); }
     });
   }
 

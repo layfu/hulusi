@@ -69,11 +69,30 @@
     display: none !important;
   }
 
-  /* 选中/待定/编辑高亮框只在屏幕上显示，不打印 */
+  /* 选中/待定/编辑高亮框与插入光标只在屏幕上显示，不打印 */
   .selbox,
   .tgtbox,
+  .insertcaret,
   .pendbox,
   .graceedbox {
     display: none !important;
+  }
+
+  /* 打印预览浮层：平时不打印；预览打开时只打印预览里的页 */
+  #preview { display: none !important; }
+  body.preview-open .workspace { display: none !important; }
+  body.preview-open #preview {
+    display: block !important;
+    position: static;
+    inset: auto;
+    background: none;
+    overflow: visible;
+  }
+  body.preview-open #preview .preview-bar { display: none !important; }
+  body.preview-open #preview .preview-body {
+    display: block;
+    overflow: visible;
+    padding: 0;
+    gap: 0;
   }
 }
