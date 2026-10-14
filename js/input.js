@@ -6,6 +6,7 @@ window.HLS = window.HLS || {};
   var state;
   var stageEl;
   var saveTimer;
+  var autoScrollReady = false;
 
   function $(sel) { return document.querySelector(sel); }
   function $all(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
@@ -73,11 +74,13 @@ window.HLS = window.HLS || {};
     stageEl = document.getElementById('pages');
     bindMeta();
     bindScale();
+    bindMenu();
     bindToolbar();
     bindKeyboard();
     bindSvg();
     bindFile();
     render();
+    autoScrollReady = true; // 初次加载不自动跳到底部，用户开始编辑后才跟随
   }
 
   // ---------- 状态与提交 ----------
@@ -120,6 +123,43 @@ window.HLS = window.HLS || {};
     updateStatus();
     updateMetaInputs();
     updateToolbarActive();
+    scrollActiveIntoView();
+  }
+
+  // 把当前正在输入的音符滚动到可见处（手机端在谱子区里滚，桌面端滚窗口）
+  function scrollActiveIntoView() {
+    if (!autoScrollReady) return;
+    var idx = (state.mode === 'edit' && state.sel >= 0)
+      ? state.sel : (state.song.notes.length - 1);
+    if (idx < 0) return;
+    var pages = stageEl.querySelectorAll('.page');
+    var el = null;
+    for (var i = 0; i < pages.length; i++) {
+      var off = parseInt(pages[i].getAttribute('data-offset'), 10) || 0;
+      var local = idx - off;
+      if (local < 0) continue;
+      var r = pages[i].querySelector('.hit[data-index="' + local + '"]');
+      if (r) { el = r; break; }
+    }
+    if (!el) return;
+    var stage = document.querySelector('.stage');
+    if (!stage) return;
+    var box = el.getBoundingClientRect();
+    var scrollable = stage.scrollHeight - stage.clientHeight > 2;
+    if (scrollable) {
+      var sr = stage.getBoundingClientRect();
+      var m = 28;
+      if (box.top < sr.top + m || box.bottom > sr.bottom - m) {
+        var top = stage.scrollTop + (box.top - sr.top) - (stage.clientHeight - box.height) / 2;
+        stage.scrollTop = Math.max(0, top);
+      }
+    } else {
+      var vh = window.innerHeight;
+      if (box.top < 0 || box.bottom > vh) {
+        var y = window.scrollY + box.top - vh / 2 + box.height / 2;
+        window.scrollTo(0, Math.max(0, y));
+      }
+    }
   }
 
   function updateScaleUI(info) {
@@ -486,6 +526,17 @@ window.HLS = window.HLS || {};
     if (af) af.addEventListener('click', autoFit);
     var af2 = $('#autofit2-btn');
     if (af2) af2.addEventListener('click', autoFit2);
+  }
+
+  // 手机端「菜单」：显示/隐藏 曲谱信息 + 文件操作
+  function bindMenu() {
+    var btn = $('#menu-toggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var open = document.body.classList.toggle('menu-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.textContent = open ? '✕ 关闭' : '☰ 菜单';
+    });
   }
 
   function autoFit() {

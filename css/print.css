@@ -10,8 +10,13 @@
     background: #fff;
     margin: 0;
     padding: 0;
+    height: auto !important;
+    overflow: visible !important;
   }
+  body { display: block !important; }
 
+  .menu-toggle,
+  .filebar,
   .appbar,
   .meta,
   .status,

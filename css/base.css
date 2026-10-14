@@ -69,6 +69,21 @@ body {
 
 .filebar { display: flex; gap: 10px; flex-wrap: wrap; }
 
+/* 手机端「菜单」按钮：桌面隐藏，窄屏显示 */
+.menu-toggle {
+  display: none;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 0 14px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
 /* ---------------- 曲谱信息 ---------------- */
 
 .meta {
@@ -386,28 +401,108 @@ body {
   * { transition-duration: 0.01ms !important; }
 }
 
-/* 窄屏：改为上下排列 */
+/* ================= 手机 / 窄屏布局 =================
+   整屏三段式：顶栏(含菜单) + 谱子区(独立滚动、自动聚焦) + 底部固定工具栏。
+   目标：一屏看全所有输入按钮，不用上下滚动去找按钮。 */
 @media (max-width: 900px) {
-  .workspace {
+  html, body { height: 100%; }
+  body {
+    height: 100dvh;
+    display: flex;
     flex-direction: column;
-    padding: 0 16px 24px;
+    overflow: hidden;
   }
-  .pane-main { width: 100%; }
+
+  .appbar {
+    position: relative;
+    flex: 0 0 auto;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .brand-name { font-size: 17px; }
+  .logo { width: 34px; height: 34px; font-size: 19px; }
+  .menu-toggle { display: inline-flex; align-items: center; margin-left: auto; }
+
+  /* 文件操作默认收起，点「菜单」才展开 */
+  .filebar { display: none; width: 100%; gap: 8px; flex-wrap: wrap; }
+  body.menu-open .filebar { display: flex; }
+  .filebar .btn { flex: 1 1 0; min-height: 44px; font-size: 15px; padding: 0 8px; }
+
+  .workspace {
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    max-width: none;
+  }
+  .pane-main {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  /* 曲谱信息默认收起，展开时占有限高度并可自身滚动 */
+  .meta {
+    display: none;
+    flex: 0 0 auto;
+    max-height: 42vh;
+    overflow: auto;
+    padding: 10px 12px;
+    gap: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  body.menu-open .meta { display: flex; }
+  .meta .field-grow { flex: 1 1 100%; }
+
+  /* 谱子区：独立滚动，输入时自动聚焦到当前音符 */
+  .stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 10px;
+  }
+  .paper { padding: 14px; border-radius: 10px; }
+  #pages { gap: 12px; }
+
+  .status { flex: 0 0 auto; padding: 4px 12px; font-size: 12px; gap: 8px; }
+  .status .hint { display: none; }
+
+  /* 底部固定工具栏：一屏放下全部按钮（放不下时自身兜底滚动） */
   .toolbar {
-    position: static;
-    flex: none;
+    flex: 0 0 auto;
+    order: 0;
     width: 100%;
     max-width: none;
-    max-height: none;
-    order: 2;
+    max-height: 58vh;
+    overflow-y: auto;
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
   }
+  .group { gap: 3px; }
+  .group-title { display: none; }
+  .row { gap: 4px; }
+  .btn { min-height: 42px; padding: 0 8px; font-size: 14px; border-radius: 8px; }
+  .key { flex: 1 1 0; width: auto; min-width: 0; height: 42px; font-size: 20px; border-radius: 8px; }
+  .key-rest { width: auto; }
+  .btn-sym { min-width: 0; }
 }
 
-/* 小屏微调 */
+/* 更小的手机屏：再压缩一点 */
 @media (max-width: 640px) {
   body { font-size: 17px; }
   .brand-name { display: none; }
-  .filebar .btn { font-size: 15px; min-height: 46px; padding: 0 12px; }
-  .toolbar { gap: 16px; }
-  .btn { font-size: 16px; }
+  .btn { min-height: 40px; padding: 0 6px; font-size: 13px; }
+  .key { height: 40px; font-size: 19px; }
+  .filebar .btn { font-size: 14px; }
 }
