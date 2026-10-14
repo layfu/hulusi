@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>葫芦丝打谱</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/print.css" media="print">
+</head>
+<body>
+
+<header class="appbar">
+  <div class="brand">
+    <span class="logo">葫</span>
+    <span class="brand-name">葫芦丝打谱</span>
+  </div>
+  <nav class="filebar">
+    <button class="btn btn-ghost" data-file="open">打开</button>
+    <button class="btn btn-ghost" data-file="save">保存文件</button>
+    <button class="btn btn-ghost" data-file="new">清空</button>
+    <button class="btn btn-ghost" data-file="print">打印</button>
+    <button class="btn btn-ghost" data-file="pdf">导出 PDF</button>
+    <button class="btn btn-primary" data-file="png">导出图片</button>
+  </nav>
+</header>
+
+<div class="workspace">
+  <div class="pane-main">
+
+<section class="meta" aria-label="曲谱信息">
+  <label class="field field-grow">
+    <span class="field-label">标题</span>
+    <input id="meta-title" type="text" placeholder="例如：月光下的凤尾竹" autocomplete="off">
+  </label>
+  <label class="field field-grow">
+    <span class="field-label">作者 · 整理</span>
+    <input id="meta-author" type="text" placeholder="例如：佚名 记谱" autocomplete="off">
+  </label>
+  <div class="field">
+    <span class="field-label">调号</span>
+    <div class="stepper">
+      <button class="step" data-act="key-down" aria-label="上一个调">−</button>
+      <span id="key-val" class="step-val">1=C</span>
+      <button class="step" data-act="key-up" aria-label="下一个调">＋</button>
+    </div>
+  </div>
+  <div class="field">
+    <span class="field-label">拍号</span>
+    <button class="btn btn-field" data-act="timesig-cycle"><span id="timesig-val">4/4</span></button>
+  </div>
+  <label class="field">
+    <span class="field-label">速度 ♩=</span>
+    <input id="meta-tempo" type="number" min="20" max="300" step="1" value="60">
+  </label>
+  <div class="field field-scale">
+    <span class="field-label">打印排版 <b id="fit-status" class="fit-status"></b></span>
+    <div class="scale-wrap">
+      <button class="btn btn-field" id="autofit-btn" title="自动取最大字号，铺满一张 A4">自动一页</button>
+      <button class="btn btn-field" id="autofit2-btn" title="自动分成两页，每页尽量大，字号一致">自动两页</button>
+      <span id="scale-val" class="scale-val">100%</span>
+    </div>
+  </div>
+</section>
+
+<main class="stage">
+  <div id="pages"></div>
+</main>
+
+<div class="status" id="status-bar">
+  <span id="status-text">正在添加新音符</span>
+  <span class="hint">键盘：1–7 输入音符，0 休止，↑↓ 升/降八度，退格删除，Esc 回到末尾</span>
+</div>
+
+  </div><!-- /pane-main -->
+
+  <aside class="toolbar" role="toolbar" aria-label="打谱工具栏">
+
+  <div class="group">
+    <span class="group-title">音符</span>
+    <div class="row">
+      <button class="key" data-note="1">1</button>
+      <button class="key" data-note="2">2</button>
+      <button class="key" data-note="3">3</button>
+      <button class="key" data-note="4">4</button>
+      <button class="key" data-note="5">5</button>
+      <button class="key" data-note="6">6</button>
+      <button class="key" data-note="7">7</button>
+      <button class="key key-rest" data-note="0">0<small>休止</small></button>
+    </div>
+  </div>
+
+  <div class="group">
+    <span class="group-title">音区 <b id="octave-ind">中音</b></span>
+    <div class="row">
+      <button class="btn" data-act="octave-down">低八度</button>
+      <button class="btn" data-act="octave-mid">中音</button>
+      <button class="btn" data-act="octave-up">高八度</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <span class="group-title">时值</span>
+    <div class="row">
+      <button class="btn" data-dur="whole">全音符</button>
+      <button class="btn" data-dur="half">二分</button>
+      <button class="btn" data-dur="quarter">四分</button>
+      <button class="btn" data-dur="eighth">八分</button>
+      <button class="btn" data-dur="sixteenth">十六分</button>
+      <button class="btn" data-act="dot">附点 ·</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <span class="group-title">葫芦丝符号</span>
+    <div class="row">
+      <button class="btn btn-sym" data-orn="up">↗ 上滑音</button>
+      <button class="btn btn-sym" data-orn="down">↘ 下滑音</button>
+      <button class="btn btn-sym" data-orn="single">吐</button>
+      <button class="btn btn-sym" data-orn="double">吐库</button>
+      <button class="btn btn-sym" data-orn="triple">吐吐库</button>
+      <button class="btn btn-sym" data-orn="breath">v 吸气</button>
+      <button class="btn btn-sym" data-orn="grace" title="倚音：点此添加；再点乐谱里的那个小音符，可改它的音高/八度">倚音</button>
+      <button class="btn btn-sym" data-orn="da">打音</button>
+      <button class="btn btn-sym" data-orn="bo">波音 ~</button>
+      <button class="btn btn-sym" data-orn="trill">颤音 tr</button>
+      <button class="btn btn-sym" data-orn="slur" title="连音线：先点起点音符，点此；再点终点音符，点此完成">连音线</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <span class="group-title">反复记号</span>
+    <div class="row">
+      <button class="btn btn-sym" data-orn="repeatStart" title="开始反复：选中反复段落第一个音符，点此">‖: 开始反复</button>
+      <button class="btn btn-sym" data-orn="repeatEnd" title="结束反复：选中反复段落最后一个音符，点此">:‖ 结束反复</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <span class="group-title">编辑</span>
+    <div class="row">
+      <button class="btn" data-act="undo">撤销</button>
+      <button class="btn" data-act="redo">重做</button>
+      <button class="btn" data-act="delete">删除</button>
+      <button class="btn" data-act="linebreak">换行</button>
+      <button class="btn" data-act="append">继续添加 ▶</button>
+    </div>
+  </div>
+
+  </aside>
+</div><!-- /workspace -->
+
+<input id="file-input" type="file" accept="application/json,.json" hidden>
+<div id="toast"></div>
+
+<script src="js/model.js"></script>
+<script src="js/symbols.js"></script>
+<script src="js/render.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/export.js"></script>
+<script src="js/input.js"></script>
+</body>
+</html>
