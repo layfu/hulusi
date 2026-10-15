@@ -4,11 +4,12 @@ window.HLS = window.HLS || {};
   'use strict';
 
   var DURS = {
-    whole:     { label: '全音符', beats: 4,    underlines: 0 },
-    half:      { label: '二分',   beats: 2,    underlines: 0 },
-    quarter:   { label: '四分',   beats: 1,    underlines: 0 },
-    eighth:    { label: '八分',   beats: 0.5,  underlines: 1 },
-    sixteenth: { label: '十六分', beats: 0.25, underlines: 2 }
+    whole:     { label: '全音符', beats: 4,     underlines: 0 },
+    half:      { label: '二分',   beats: 2,     underlines: 0 },
+    quarter:   { label: '四分',   beats: 1,     underlines: 0 },
+    eighth:    { label: '八分',   beats: 0.5,   underlines: 1 },
+    sixteenth: { label: '十六分', beats: 0.25,  underlines: 2 },
+    dur32:     { label: '三十二分', beats: 0.125, underlines: 3 }
   };
 
   var KEYS = ['1=C', '1=♯C', '1=D', '1=♭E', '1=E', '1=F',

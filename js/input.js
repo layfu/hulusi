@@ -71,6 +71,7 @@ window.HLS = window.HLS || {};
       brush: false,
       brushForm: null,
       defaults: { octave: 0, dur: 'quarter', dotted: false },
+      kxShift: 0,
       undo: [],
       redo: []
     };
@@ -84,6 +85,7 @@ window.HLS = window.HLS || {};
     bindSvg();
     bindFile();
     bindPreview();
+    bindHelp();
     render();
     autoScrollReady = true; // 初次加载不自动跳到底部，用户开始编辑后才跟随
 
@@ -207,6 +209,7 @@ window.HLS = window.HLS || {};
       state.slurStart, c.grace, true, phoneViewScale());
     updateScaleUI(finfo);
     updateStatus();
+    updateKeyHint();
     updateMetaInputs();
     updatePreviews();
     updateToolbarActive();
@@ -318,6 +321,18 @@ window.HLS = window.HLS || {};
     var r = $('[data-act="redo"]');
     if (u) u.disabled = state.undo.length === 0;
     if (r) r.disabled = state.redo.length === 0;
+  }
+
+  // 状态栏键盘提示：显示当前持续时值 / 预置八度
+  function updateKeyHint() {
+    var el = $('#key-hint');
+    if (!el) return;
+    var d = HLS.model.DURS[state.defaults.dur];
+    var txt = (d ? d.label : '四分') + (state.defaults.dotted ? '·附点' : '');
+    var s = state.kxShift || 0;
+    if (s !== 0) txt += (s > 0 ? '，升' + s + '个八度' : '，降' + (-s) + '个八度');
+    el.textContent = '键盘：当前时值 ' + txt +
+      '；音符 qwertyu 低音 · 1234567 中音 · 890-=iop 高音 · p 倍高音1 · ` 休止';
   }
 
   function updateMetaInputs() {
@@ -599,6 +614,42 @@ window.HLS = window.HLS || {};
     updateDockPos();
   }
 
+  // ---------- 快捷键帮助 ----------
+  function openHelp() {
+    var el = $('#help');
+    if (!el) return;
+    el.classList.add('open');
+    el.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('help-open');
+    var c = $('#help-close');
+    if (c) c.focus();
+  }
+
+  function closeHelp() {
+    var el = $('#help');
+    if (!el || !el.classList.contains('open')) return;
+    el.classList.remove('open');
+    el.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('help-open');
+  }
+
+  function toggleHelp() {
+    var el = $('#help');
+    if (!el) return;
+    if (el.classList.contains('open')) closeHelp(); else openHelp();
+  }
+
+  function bindHelp() {
+    var close = $('#help-close');
+    if (close) close.addEventListener('click', closeHelp);
+    var el = $('#help');
+    if (el) el.addEventListener('click', function (e) { if (e.target === el) closeHelp(); });
+    document.addEventListener('keydown', function (e) {
+      if (!document.body.classList.contains('help-open')) return;
+      if (e.key === 'Escape') { e.preventDefault(); closeHelp(); }
+    });
+  }
+
   function findNoteById(id) {
     var arr = state.song.notes;
     for (var i = 0; i < arr.length; i++) { if (arr[i].id === id) return arr[i]; }
@@ -749,6 +800,7 @@ window.HLS = window.HLS || {};
       case 'step-next': stepNext(); break;
       case 'brush': toggleBrush(); break;
       case 'more': toggleMore(); break;
+      case 'help': toggleHelp(); break;
       case 'key-down': cycleKey(-1); break;
       case 'key-up': cycleKey(1); break;
       case 'timesig-cycle': cycleTimeSig(); break;
@@ -929,28 +981,153 @@ window.HLS = window.HLS || {};
     });
   }
 
+  // ---------- 键盘快速输入 ----------
+  // 音符键：e.code → [pitch, octave]
+  var NOTE_KEYS = {
+    KeyQ: [1, -1], KeyW: [2, -1], KeyE: [3, -1], KeyR: [4, -1],
+    KeyT: [5, -1], KeyY: [6, -1], KeyU: [7, -1],
+    Digit1: [1, 0], Digit2: [2, 0], Digit3: [3, 0], Digit4: [4, 0],
+    Digit5: [5, 0], Digit6: [6, 0], Digit7: [7, 0],
+    Digit8: [1, 1], Digit9: [2, 1], Digit0: [3, 1], Minus: [4, 1],
+    Equal: [5, 1], KeyI: [6, 1], KeyO: [7, 1],
+    KeyP: [1, 2],
+    Backquote: [0, 0]
+  };
+
+  // 时值预置键：e.code → { dur, dotted }
+  var DUR_KEYS = {
+    KeyZ: { dur: 'dur32', dotted: false },
+    KeyX: { dur: 'sixteenth', dotted: false },
+    KeyC: { dur: 'eighth', dotted: false },
+    KeyV: { dur: 'quarter', dotted: false },
+    KeyB: { dur: 'half', dotted: false },
+    KeyN: { dur: 'half', dotted: true },
+    KeyM: { dur: 'whole', dotted: false }
+  };
+
+  // 时值组合键（按左右区分的修饰键）→ { dur, dotted }
+  var MOD_DUR = {
+    rightAlt:   { dur: 'half', dotted: false },
+    rightShift: { dur: 'half', dotted: true },
+    rightCtrl:  { dur: 'whole', dotted: false },
+    leftCtrl:   { dur: 'dur32', dotted: false },
+    leftShift:  { dur: 'sixteenth', dotted: false },
+    leftAlt:    { dur: 'quarter', dotted: false }
+  };
+
+  var mods = {
+    leftCtrl: false, rightCtrl: false, leftShift: false,
+    rightShift: false, leftAlt: false, rightAlt: false
+  };
+
+  function trackMods(e, down) {
+    switch (e.code) {
+      case 'ControlLeft': mods.leftCtrl = down; break;
+      case 'ControlRight': mods.rightCtrl = down; break;
+      case 'ShiftLeft': mods.leftShift = down; break;
+      case 'ShiftRight': mods.rightShift = down; break;
+      case 'AltLeft': mods.leftAlt = down; break;
+      case 'AltRight': mods.rightAlt = down; break;
+    }
+  }
+
+  function activeModDur() {
+    if (mods.rightAlt) return MOD_DUR.rightAlt;
+    if (mods.rightShift) return MOD_DUR.rightShift;
+    if (mods.rightCtrl) return MOD_DUR.rightCtrl;
+    if (mods.leftCtrl) return MOD_DUR.leftCtrl;
+    if (mods.leftShift) return MOD_DUR.leftShift;
+    if (mods.leftAlt) return MOD_DUR.leftAlt;
+    return null;
+  }
+
+  // 在谱面末尾（I 光标处）直接落一个完整音符；八度 = 音符键八度 + 预置偏移
+  function placeNote(pitch, octave, dur, dotted) {
+    var d = dur || state.defaults.dur || 'quarter';
+    var dot = (dotted === undefined) ? !!state.defaults.dotted : !!dotted;
+    var oct = pitch === 0 ? 0 : clamp((octave || 0) + (state.kxShift || 0), -2, 2);
+    commit(function () {
+      var n = HLS.model.makeNote(pitch, oct, d, dot);
+      if (state.brush && state.brushForm) applyForm(n, state.brushForm);
+      state.song.notes.push(n);
+      state.mode = 'append';
+      state.sel = -1;
+      state.slurStart = null;
+      state.graceEdit = -1;
+      state.building = false;
+      state.step = 'pitch';
+      state.kxShift = 0;
+    });
+    flashNoteAt(state.song.notes.length - 1);
+  }
+
   function bindKeyboard() {
     document.addEventListener('keydown', function (e) {
       var dlg = document.getElementById('dialog');
       if (dlg && dlg.classList.contains('open')) return; // 对话框打开时不响应打谱快捷键
       if (document.body.classList.contains('preview-open')) return; // 打印预览打开时同理
+      if (document.body.classList.contains('help-open')) return; // 帮助面板打开时同理
       var tag = (e.target.tagName || '').toLowerCase();
       if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
-      var k = e.key;
+      trackMods(e, true);
 
-      if (/^[0-7]$/.test(k)) { e.preventDefault(); addNote(+k); return; }
-      if (k === 'Backspace' || k === 'Delete') { e.preventDefault(); del(); return; }
-      if (k === 'ArrowUp') { e.preventDefault(); octaveBy(1); return; }
-      if (k === 'ArrowDown') { e.preventDefault(); octaveBy(-1); return; }
-      if (k === 'Escape') { e.preventDefault(); toAppend(); return; }
-      if ((e.ctrlKey || e.metaKey) && (k === 'z' || k === 'Z')) {
+      // 撤销 / 重做（重做用 Ctrl+Shift+Z，因 z/y 已用作时值/音符键）
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') {
         e.preventDefault();
         if (e.shiftKey) redo(); else undo();
         return;
       }
-      if ((e.ctrlKey || e.metaKey) && (k === 'y' || k === 'Y')) {
-        e.preventDefault(); redo(); return;
+
+      var nk = NOTE_KEYS[e.code];
+      var dk = DUR_KEYS[e.code];
+      var hasMod = e.ctrlKey || e.metaKey || e.altKey || e.shiftKey;
+      var mod = e.metaKey ? null : activeModDur();
+
+      // 组合键：左右修饰键 + 音符键 → 一次落谱，带指定时值（不改持续时值）
+      if (nk && mod && !e.repeat) {
+        e.preventDefault();
+        placeNote(nk[0], nk[1], mod.dur, mod.dotted);
+        return;
       }
+
+      // 音符键：用持续时值 / 附点直接落谱
+      if (nk && !hasMod && !e.repeat) {
+        e.preventDefault();
+        placeNote(nk[0], nk[1]);
+        return;
+      }
+
+      // 时值预置键：持续生效
+      if (dk && !hasMod) {
+        e.preventDefault();
+        state.defaults.dur = dk.dur;
+        state.defaults.dotted = dk.dotted;
+        state.step = 'pitch';
+        render();
+        return;
+      }
+
+      if (!hasMod) {
+        // 预置八度：f 降一个八度、g 升一个八度（作用于下一个音符）
+        if (e.code === 'KeyF') { e.preventDefault(); state.kxShift = clamp(state.kxShift - 1, -4, 4); render(); return; }
+        if (e.code === 'KeyG') { e.preventDefault(); state.kxShift = clamp(state.kxShift + 1, -4, 4); render(); return; }
+        // 附点开关：持续生效
+        if (e.code === 'Period' || e.code === 'Comma') {
+          e.preventDefault();
+          state.defaults.dotted = !state.defaults.dotted;
+          render();
+          return;
+        }
+      }
+
+      if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); del(); return; }
+      if (e.key === 'Escape') { e.preventDefault(); toAppend(); return; }
+    });
+
+    document.addEventListener('keyup', function (e) { trackMods(e, false); });
+    window.addEventListener('blur', function () {
+      mods.leftCtrl = mods.rightCtrl = mods.leftShift =
+        mods.rightShift = mods.leftAlt = mods.rightAlt = false;
     });
   }
 

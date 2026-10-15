@@ -289,8 +289,8 @@ body {
 }
 
 @media (min-width: 901px) {
-  /* 桌面：让开右侧工具栏（336）+ 间距，并适配画布居中 */
-  .append-dock { right: max(384px, calc(50vw - 396px)); bottom: 24px; }
+  /* 桌面：不使用悬浮「继续添加」，由工具栏与键盘操作代替 */
+  .append-dock { display: none; }
 }
 
 body.menu-open .append-dock,
@@ -635,6 +635,110 @@ body[data-step="form"] .step-form { display: flex; }
   flex: 1 1 0;
   min-height: 60px;
   font-size: 19px;
+}
+
+/* ---------------- 快捷键帮助 ---------------- */
+
+.help {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(20, 18, 14, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 180ms var(--ease), visibility 0s linear 180ms;
+}
+
+.help.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 180ms var(--ease);
+}
+
+body.help-open { overflow: hidden; }
+
+.help-card {
+  width: 100%;
+  max-width: 680px;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(20, 18, 14, 0.28);
+  transform: scale(0.96);
+  transition: transform 180ms var(--ease-out);
+  overflow: hidden;
+}
+
+.help.open .help-card { transform: scale(1); }
+
+.help-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.help-title { margin: 0; font-size: 21px; font-weight: 700; }
+
+.help-body {
+  padding: 8px 22px 20px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.help-sec { margin: 14px 0; }
+
+.help-sec h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent-deep);
+}
+
+.help-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.help-k { flex: 0 0 auto; min-width: 220px; }
+.help-v { color: var(--muted); font-size: 15px; }
+
+.help kbd {
+  display: inline-block;
+  min-width: 24px;
+  margin: 2px 2px 2px 0;
+  padding: 2px 7px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink);
+  background: var(--bg-deep);
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+}
+
+.help-note {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--muted);
+  background: var(--accent-soft);
+  border-radius: 10px;
 }
 
 /* ---------------- 打印预览 ---------------- */

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>葫芦丝打谱</title>
-<link rel="stylesheet" href="css/base.css?v=5">
-<link rel="stylesheet" href="css/print.css?v=5" media="print">
+<link rel="stylesheet" href="css/base.css?v=6">
+<link rel="stylesheet" href="css/print.css?v=6" media="print">
 </head>
 <body>
 
@@ -22,6 +22,8 @@
     <button class="btn btn-ghost" data-file="preview">打印预览</button>
     <button class="btn btn-ghost" data-file="print">打印</button>
     <button class="btn btn-ghost" data-file="pdf">导出 PDF</button>
+    <span class="filebar-sep" aria-hidden="true"></span>
+    <button class="btn btn-ghost" data-act="help" id="help-btn">⌨ 快捷键帮助</button>
   </nav>
   <button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false">☰ 菜单</button>
 </header>
@@ -75,7 +77,7 @@
 
 <div class="status" id="status-bar">
   <span id="status-text">正在添加新音符</span>
-  <span class="hint">键盘：1–7 输入音符，0 休止，↑↓ 升/降八度，退格删除，Esc 回到末尾</span>
+  <span class="hint" id="key-hint">键盘：音符 qwertyu 低音 · 1234567 中音 · 890-=iop 高音 · p 倍高音1 · ` 休止；时值 zxcvbnm；f/g 降升八度；. 附点</span>
 </div>
 
   </div><!-- /pane-main -->
@@ -114,6 +116,7 @@
       <button class="btn btn-pic" data-dur="quarter">四分</button>
       <button class="btn btn-pic" data-dur="eighth">八分</button>
       <button class="btn btn-pic" data-dur="sixteenth">十六分</button>
+      <button class="btn btn-pic" data-dur="dur32">三十二分</button>
       <button class="btn btn-pic" data-act="dot">附点 ·</button>
     </div>
   </div>
@@ -205,11 +208,53 @@
   </div>
 </div>
 
-<script src="js/model.js?v=5"></script>
-<script src="js/symbols.js?v=5"></script>
-<script src="js/render.js?v=5"></script>
-<script src="js/storage.js?v=5"></script>
-<script src="js/export.js?v=5"></script>
-<script src="js/input.js?v=5"></script>
+<div id="help" class="help" role="dialog" aria-modal="true" aria-labelledby="help-title" aria-hidden="true">
+  <div class="help-card">
+    <div class="help-head">
+      <h2 id="help-title" class="help-title">⌨ 键盘快捷键</h2>
+      <button type="button" class="btn" id="help-close">关闭</button>
+    </div>
+    <div class="help-body">
+      <section class="help-sec">
+        <h3>音符（自带音高 + 八度，按下即上屏）</h3>
+        <div class="help-row"><span class="help-k"><kbd>q</kbd><kbd>w</kbd><kbd>e</kbd><kbd>r</kbd><kbd>t</kbd><kbd>y</kbd><kbd>u</kbd></span><span class="help-v">低音 1 2 3 4 5 6 7</span></div>
+        <div class="help-row"><span class="help-k"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd><kbd>6</kbd><kbd>7</kbd></span><span class="help-v">中音 1 2 3 4 5 6 7</span></div>
+        <div class="help-row"><span class="help-k"><kbd>8</kbd><kbd>9</kbd><kbd>0</kbd><kbd>-</kbd><kbd>=</kbd><kbd>i</kbd><kbd>o</kbd></span><span class="help-v">高音 1 2 3 4 5 6 7</span></div>
+        <div class="help-row"><span class="help-k"><kbd>p</kbd></span><span class="help-v">倍高音 1</span></div>
+        <div class="help-row"><span class="help-k"><kbd>`</kbd></span><span class="help-v">休止符 0</span></div>
+      </section>
+      <section class="help-sec">
+        <h3>时值（选中后持续生效，直到再改）</h3>
+        <div class="help-row"><span class="help-k"><kbd>z</kbd><kbd>x</kbd><kbd>c</kbd></span><span class="help-v">三十二分 · 十六分 · 八分</span></div>
+        <div class="help-row"><span class="help-k"><kbd>v</kbd></span><span class="help-v">四分</span></div>
+        <div class="help-row"><span class="help-k"><kbd>b</kbd><kbd>n</kbd><kbd>m</kbd></span><span class="help-v">二分（1增时线） · 附点二分（2增时线） · 全音符（3增时线）</span></div>
+      </section>
+      <section class="help-sec">
+        <h3>组合键（按住修饰键再按音符键，一次出谱，不改持续时值）</h3>
+        <div class="help-row"><span class="help-k"><kbd>左Ctrl</kbd> + 音符</span><span class="help-v">三十二分</span></div>
+        <div class="help-row"><span class="help-k"><kbd>左Shift</kbd> + 音符</span><span class="help-v">十六分</span></div>
+        <div class="help-row"><span class="help-k"><kbd>左Alt</kbd> + 音符</span><span class="help-v">四分</span></div>
+        <div class="help-row"><span class="help-k"><kbd>右Alt</kbd> / <kbd>右Shift</kbd> / <kbd>右Ctrl</kbd> + 音符</span><span class="help-v">1 / 2 / 3 个增时线</span></div>
+      </section>
+      <section class="help-sec">
+        <h3>预置与编辑</h3>
+        <div class="help-row"><span class="help-k"><kbd>f</kbd> / <kbd>g</kbd></span><span class="help-v">下一个音符降 / 升一个八度</span></div>
+        <div class="help-row"><span class="help-k"><kbd>.</kbd> 或 <kbd>,</kbd></span><span class="help-v">切换附点（持续）</span></div>
+        <div class="help-row"><span class="help-k"><kbd>Backspace</kbd> / <kbd>Delete</kbd></span><span class="help-v">删除当前音符</span></div>
+        <div class="help-row"><span class="help-k"><kbd>Esc</kbd></span><span class="help-v">回到末尾继续添加</span></div>
+        <div class="help-row"><span class="help-k"><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></span><span class="help-v">撤销 / 重做</span></div>
+      </section>
+      <p class="help-note">示例：先按 <kbd>f</kbd>（降八度）再按 <kbd>c</kbd>（八分）再按 <kbd>3</kbd>，即在定位光标处出现「低音 3 的八分音符」。<br>
+      提示：<kbd>左Ctrl</kbd>+<kbd>W</kbd>、<kbd>T</kbd>、<kbd>Q</kbd>、<kbd>1</kbd>–<kbd>9</kbd> 等为浏览器保留键，可能无法拦截，建议以独立窗口 / PWA 方式使用。</p>
+    </div>
+  </div>
+</div>
+
+<script src="js/model.js?v=6"></script>
+<script src="js/symbols.js?v=6"></script>
+<script src="js/render.js?v=6"></script>
+<script src="js/storage.js?v=6"></script>
+<script src="js/export.js?v=6"></script>
+<script src="js/input.js?v=6"></script>
 </body>
 </html>

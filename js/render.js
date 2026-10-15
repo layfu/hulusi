@@ -374,16 +374,19 @@ window.HLS = window.HLS || {};
         j++;
       }
       s += beamLine(place[i], place[j], 0);
-      // 二级线：组内连续 u>=2 的子段
-      var k = i;
-      while (k <= j) {
-        if (HLS.model.underlinesOf(place[k].note) >= 2) {
-          var m = k;
-          while (m + 1 <= j && HLS.model.underlinesOf(place[m + 1].note) >= 2) m++;
-          s += beamLine(place[k], place[m], 1);
-          k = m + 1;
-        } else {
-          k++;
+      // 二/三级线：组内连续更高减时线的子段逐级连写
+      var level;
+      for (level = 1; level <= 2; level++) {
+        var k = i;
+        while (k <= j) {
+          if (HLS.model.underlinesOf(place[k].note) >= level + 1) {
+            var m = k;
+            while (m + 1 <= j && HLS.model.underlinesOf(place[m + 1].note) >= level + 1) m++;
+            s += beamLine(place[k], place[m], level);
+            k = m + 1;
+          } else {
+            k++;
+          }
         }
       }
       i = j + 1;
@@ -549,7 +552,7 @@ window.HLS = window.HLS || {};
 
     var marks = {
       whole: { beats: 4, u: 0 }, half: { beats: 2, u: 0 }, quarter: { beats: 1, u: 0 },
-      eighth: { beats: 0.5, u: 1 }, sixteenth: { beats: 0.25, u: 2 }
+      eighth: { beats: 0.5, u: 1 }, sixteenth: { beats: 0.25, u: 2 }, dur32: { beats: 0.125, u: 3 }
     };
     var info = marks[dur] || marks.quarter;
     var dashes = info.beats >= 2 ? Math.round(info.beats - 1) : 0;
@@ -633,7 +636,7 @@ window.HLS = window.HLS || {};
     octave = octave || 0;
     var marks = {
       whole: { beats: 4, u: 0 }, half: { beats: 2, u: 0 }, quarter: { beats: 1, u: 0 },
-      eighth: { beats: 0.5, u: 1 }, sixteenth: { beats: 0.25, u: 2 }
+      eighth: { beats: 0.5, u: 1 }, sixteenth: { beats: 0.25, u: 2 }, dur32: { beats: 0.125, u: 3 }
     };
     var info = marks[dur] || marks.quarter;
     var dashes = info.beats >= 2 ? Math.round(info.beats - 1) : 0;
