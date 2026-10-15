@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>葫芦丝打谱</title>
-<link rel="stylesheet" href="css/base.css?v=3">
-<link rel="stylesheet" href="css/print.css?v=3" media="print">
+<link rel="stylesheet" href="css/base.css?v=5">
+<link rel="stylesheet" href="css/print.css?v=5" media="print">
 </head>
 <body>
 
@@ -68,6 +68,11 @@
   <div id="pages"></div>
 </main>
 
+<div class="append-dock" id="append-dock">
+  <button class="btn btn-primary btn-append" data-act="append" type="button"
+    aria-label="继续添加音符">＋ 继续添加</button>
+</div>
+
 <div class="status" id="status-bar">
   <span id="status-text">正在添加新音符</span>
   <span class="hint">键盘：1–7 输入音符，0 休止，↑↓ 升/降八度，退格删除，Esc 回到末尾</span>
@@ -79,6 +84,7 @@
 
   <div class="group step-group step-pitch">
     <span class="group-title" id="pitch-title">① 音符（点数字加一个）</span>
+    <span class="ready-badge" aria-hidden="true">再点一下即上屏</span>
     <div class="row">
       <button class="key" data-note="1">1</button>
       <button class="key" data-note="2">2</button>
@@ -114,6 +120,7 @@
 
   <div class="group step-group step-form">
     <span class="group-title">④ 写法（可选）</span>
+    <span class="ready-badge" aria-hidden="true">再点一下即上屏</span>
     <div class="row row-forms">
       <button class="btn btn-form" data-form="">素音</button>
       <button class="btn btn-form" data-form="single">吐</button>
@@ -151,6 +158,7 @@
       <button class="btn btn-sym" data-orn="repeatStart" title="开始反复：选中反复段落第一个音符，点此">‖: 开始反复</button>
       <button class="btn btn-sym" data-orn="repeatEnd" title="结束反复：选中反复段落最后一个音符，点此">:‖ 结束反复</button>
       <button class="btn btn-sym" data-orn="slur" title="连音线：先点起点音符，点此；再点终点音符，点此完成">连音线</button>
+      <button class="btn btn-sym" data-orn="slurDel" title="删连音线：选中连着连音线的音符，点此删除">删连音线</button>
       <button class="btn" data-act="linebreak">换行</button>
     </div>
   </div>
@@ -163,7 +171,6 @@
       <button class="btn" data-act="undo">撤销</button>
       <button class="btn" data-act="redo">重做</button>
       <button class="btn" data-act="delete">删除</button>
-      <button class="btn" data-act="append">继续添加 ▶</button>
     </div>
   </div>
 
@@ -198,11 +205,11 @@
   </div>
 </div>
 
-<script src="js/model.js?v=3"></script>
-<script src="js/symbols.js?v=3"></script>
-<script src="js/render.js?v=3"></script>
-<script src="js/storage.js?v=3"></script>
-<script src="js/export.js?v=3"></script>
-<script src="js/input.js?v=3"></script>
+<script src="js/model.js?v=5"></script>
+<script src="js/symbols.js?v=5"></script>
+<script src="js/render.js?v=5"></script>
+<script src="js/storage.js?v=5"></script>
+<script src="js/export.js?v=5"></script>
+<script src="js/input.js?v=5"></script>
 </body>
 </html>

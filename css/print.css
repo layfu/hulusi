@@ -21,6 +21,7 @@
   .meta,
   .status,
   .toolbar,
+  .append-dock,
   #toast {
     display: none !important;
   }

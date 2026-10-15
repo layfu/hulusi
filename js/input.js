@@ -210,7 +210,31 @@ window.HLS = window.HLS || {};
     updateMetaInputs();
     updatePreviews();
     updateToolbarActive();
+    document.body.classList.toggle('ready-finish', readyToFinish());
+    updateDockPos();
     scrollActiveIntoView();
+  }
+
+  // 走到最后一步（④ 写法 / ⑤ 倚音）：此时再点一下，本音就完成上屏，
+  // 光标随即变成闪动竖线、移到下一个音的位置 —— 这正是需要提示的时机
+  function readyToFinish() {
+    if (state.step !== 'form' && state.step !== 'grace') return false;
+    return targetNote() != null;
+  }
+
+  // 手机端：让悬浮「继续添加」始终浮在谱面区右下角（避开底部工具栏与状态栏）
+  function updateDockPos() {
+    var dock = document.getElementById('append-dock');
+    var stage = document.querySelector('.stage');
+    if (!dock || !stage) return;
+    if (window.matchMedia && window.matchMedia('(min-width: 901px)').matches) {
+      dock.style.bottom = '';
+      return;
+    }
+    var rect = stage.getBoundingClientRect();
+    if (rect.height < 1) return; // 舞台隐藏时（菜单展开）不计算
+    var bottom = Math.round(window.innerHeight - rect.bottom) + 12;
+    dock.style.bottom = (bottom > 12 ? bottom : 12) + 'px';
   }
 
   // 把当前正在输入的音符滚动到可见处（手机端在谱子区里滚，桌面端滚窗口）
@@ -392,7 +416,27 @@ window.HLS = window.HLS || {};
         state.building = true;
         state.step = 'octave';
       });
+      flashNoteAt(state.song.notes.length - 1);
     }
+  }
+
+  // 上屏动效：给刚添加的音符加一次性入场动画
+  function flashNoteAt(idx) {
+    if (idx < 0) return;
+    var pages = stageEl.querySelectorAll('.page');
+    var g = null;
+    for (var i = 0; i < pages.length; i++) {
+      var off = parseInt(pages[i].getAttribute('data-offset'), 10) || 0;
+      var local = idx - off;
+      if (local < 0) continue;
+      var hit = pages[i].querySelector('.hit[data-index="' + local + '"]');
+      if (hit && hit.parentNode) { g = hit.parentNode; break; }
+    }
+    if (!g) return;
+    g.classList.remove('note-enter');
+    void g.getBoundingClientRect(); // 强制重排，保证动画能重播
+    g.classList.add('note-enter');
+    setTimeout(function () { g.classList.remove('note-enter'); }, 760);
   }
 
   function setDuration(dur) {
@@ -442,15 +486,20 @@ window.HLS = window.HLS || {};
   function toggleDot() {
     if (state.mode === 'edit' && state.sel >= 0) {
       var idx = state.sel;
-      commit(function () { state.song.notes[idx].dotted = !state.song.notes[idx].dotted; });
+      commit(function () {
+        state.song.notes[idx].dotted = !state.song.notes[idx].dotted;
+        state.step = 'form';
+      });
     } else {
       state.defaults.dotted = !state.defaults.dotted;
-      updateToolbarActive();
+      state.step = 'form';
+      render();
     }
   }
 
   function toggleOrn(key) {
     if (key === 'slur') { toggleSlur(); return; }
+    if (key === 'slurDel') { removeSlur(); return; }
     var idx = targetIndex();
     if (idx < 0) { HLS.toast('请先添加音符'); return; }
     if (key === 'repeatStart' || key === 'repeatEnd') {
@@ -547,6 +596,7 @@ window.HLS = window.HLS || {};
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       btn.textContent = open ? '收起更多符号 ▴' : '更多符号 ▾（单独加 / 自由组合）';
     }
+    updateDockPos();
   }
 
   function findNoteById(id) {
@@ -582,6 +632,28 @@ window.HLS = window.HLS || {};
     state.slurStart = t.id;
     render();
     HLS.toast('已标记起点，请点击要连接的另一个音符');
+  }
+
+  // 删除连音线：选中的音符无论是起点还是终点，都去掉与它相连的线
+  function removeSlur() {
+    if (state.slurStart != null) {
+      state.slurStart = null;
+      render();
+      HLS.toast('已取消连音线起点');
+      return;
+    }
+    var t = targetNote();
+    if (!t) { HLS.toast('请先选中音符'); return; }
+    var involved = (t.slurTo != null) ||
+      state.song.notes.some(function (n) { return n.slurTo === t.id; });
+    if (!involved) { HLS.toast('这个音符没有连音线'); return; }
+    var id = t.id;
+    commit(function () {
+      state.song.notes.forEach(function (n) { if (n.slurTo === id) n.slurTo = null; });
+      var self = findNoteById(id);
+      if (self) self.slurTo = null;
+    });
+    HLS.toast('已删除连音线');
   }
 
   function del() {
@@ -788,6 +860,7 @@ window.HLS = window.HLS || {};
       b.setAttribute('aria-expanded', open ? 'true' : 'false');
       b.textContent = open ? '✕ 关闭' : '☰ 菜单';
     }
+    updateDockPos();
   }
 
   function bindMenu() {

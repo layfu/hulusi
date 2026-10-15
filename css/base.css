@@ -264,6 +264,106 @@ body {
 #status-text { color: var(--accent-deep); font-weight: 700; }
 .status .hint { opacity: 0.8; }
 
+/* ---------------- 悬浮「继续添加」 ---------------- */
+/* 固定在编辑区右下角，始终可见、不折叠、手指易点 */
+.append-dock {
+  position: fixed;
+  right: 16px;
+  bottom: 20px;
+  z-index: 25;
+  pointer-events: none;
+}
+
+.btn-append {
+  pointer-events: auto;
+  min-height: 62px;
+  padding: 0 28px;
+  font-size: 20px;
+  font-weight: 700;
+  border-radius: 999px;
+  box-shadow: 0 12px 30px rgba(30, 25, 15, 0.24), 0 3px 8px rgba(30, 25, 15, 0.14);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-append:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+}
+
+@media (min-width: 901px) {
+  /* 桌面：让开右侧工具栏（336）+ 间距，并适配画布居中 */
+  .append-dock { right: max(384px, calc(50vw - 396px)); bottom: 24px; }
+}
+
+body.menu-open .append-dock,
+body.preview-open .append-dock { display: none; }
+
+/* ---------------- 「再点一下即上屏」标记 ---------------- */
+
+.ready-badge {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  align-self: flex-start;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.ready-badge::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: hlsReadyPulse 1.1s ease-in-out infinite;
+}
+
+/* 只在“最后一步”显示：再点一下，本音就完成（随后光标变成闪动竖线） */
+body.ready-finish[data-step="form"] .step-form .ready-badge,
+body.ready-finish[data-step="grace"] .step-pitch .ready-badge { display: inline-flex; }
+
+@keyframes hlsReadyPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.7); }
+}
+
+/* 可完成时，对应按钮轻轻呼吸 */
+body.ready-finish[data-step="form"] .step-form .btn-form:not(.active),
+body.ready-finish[data-step="grace"] .step-pitch .key:not(.active) {
+  animation: hlsKeyReady 1.6s ease-in-out infinite;
+}
+
+@keyframes hlsKeyReady {
+  0%, 100% { box-shadow: inset 0 0 0 0 rgba(43, 111, 72, 0); }
+  50% { box-shadow: inset 0 0 0 2.5px rgba(43, 111, 72, 0.5); }
+}
+
+/* ---------------- 上屏动效 ---------------- */
+/* 新音符落到谱面上：由大变小 + 落下 + 数字短暂泛绿 */
+.scoresvg .note.note-enter {
+  animation: hlsNoteLand 520ms cubic-bezier(0.23, 1, 0.32, 1);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes hlsNoteLand {
+  0% { opacity: 0; transform: translateY(-18px) scale(1.6); }
+  55% { opacity: 1; transform: translateY(2px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.scoresvg .note.note-enter .num {
+  animation: hlsNoteGlow 750ms ease-out;
+}
+
+@keyframes hlsNoteGlow {
+  0% { fill: var(--accent); }
+  100% { fill: var(--ink); }
+}
+
 /* ---------------- 工具栏（右侧栏） ---------------- */
 
 .workspace {
@@ -714,6 +814,10 @@ body.preview-open { overflow: hidden; }
 
   .status { flex: 0 0 auto; padding: 6px 12px; font-size: 16px; gap: 8px; }
   .status .hint { display: none; }
+
+  /* 悬浮按钮：手机端浮在谱面区右下角（bottom 由脚本按实际布局计算，避开底部工具栏） */
+  .append-dock { right: 14px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .btn-append { min-height: 58px; padding: 0 24px; font-size: 19px; }
 
   /* 展开菜单时只留「设置 / 文件」：不显示乐谱、状态和打谱工具栏 */
   body.menu-open .stage,
