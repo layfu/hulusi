@@ -533,6 +533,23 @@ body[data-view="more"] .view-more { display: block; }
 
 .key:active { transform: scale(0.95); }
 
+.key { overflow: hidden; }
+
+.key .kpreview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.key .kpreview svg {
+  display: block;
+  height: 46px;
+  width: auto;
+  max-width: calc(100% - 8px);
+}
+
 .key.active {
   color: var(--accent-deep);
   background: var(--accent-soft);
@@ -544,6 +561,14 @@ body[data-view="more"] .view-more { display: block; }
   font-size: 28px;
   position: relative;
   padding-bottom: 12px;
+}
+
+.key-rest .kpreview {
+  height: 34px;
+}
+
+.key-rest .kpreview svg {
+  height: 32px;
 }
 
 .key-rest small {
@@ -1258,6 +1283,7 @@ body.preview-open { overflow: hidden; }
 
   .keypad { gap: 7px; }
   .key { height: 60px; font-size: 31px; border-radius: 11px; }
+  .key .kpreview svg { height: 44px; }
   .key-rest { font-size: 27px; }
   .key-rest small { font-size: 11px; }
 

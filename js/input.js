@@ -431,15 +431,21 @@ window.HLS = window.HLS || {};
     } else if (state.view !== 'notes') {
       var tail = state.mode === 'insert' ? '继续插入'
         : (state.mode === 'edit' ? '回到改音' : '继续写');
-      txt = state.view === 'more'
-        ? '点符号；点「音符」' + tail
-        : '选好后点「音符」' + tail;
+      if (state.view === 'form' && (state.building || state.mode === 'append' || state.mode === 'insert')) {
+        txt = '点一个吹法，自动回数字键';
+      } else {
+        txt = state.view === 'more'
+          ? '点符号；点「音符」' + tail
+          : '选好后点「音符」' + tail;
+      }
     } else if (state.mode === 'insert') {
       txt = '点数字插入；点「继续写」回末尾';
     } else if (state.mode === 'edit' && state.sel >= 0) {
       txt = state.building ? '已写好，点数字写下一个' : '改完点「继续写」回到末尾';
     } else {
-      txt = state.song.notes.length ? '点数字继续写' : '点数字 1–7，开始写谱';
+      txt = state.song.notes.length
+        ? '点数字继续写；点◀改上一个'
+        : '点数字 1–7，开始写谱';
     }
     el.textContent = txt;
   }
@@ -495,6 +501,23 @@ window.HLS = window.HLS || {};
     });
   }
 
+  // 数字键上直接画出「当前写法」：音区点、长短线、附点、增时线都能看见。
+  var keyPreviewKey = null;
+  function updateKeyPreviews(oct, dur, dotted) {
+    var k = oct + ':' + dur + ':' + dotted;
+    if (k === keyPreviewKey) return;
+    keyPreviewKey = k;
+    $all('[data-note]').forEach(function (b) {
+      var n = +b.getAttribute('data-note');
+      var host = b.querySelector('.kpreview');
+      if (!host) return;
+      host.innerHTML = HLS.render.notePreview(n, n === 0 ? 0 : oct, dur, dotted);
+      b.setAttribute('aria-label', n === 0
+        ? '休止符，' + durLabel(dur, dotted)
+        : '音符 ' + n + '，' + octaveLabel(oct) + '，' + durLabel(dur, dotted));
+    });
+  }
+
   // ---------- 面板刷新 ----------
 
   function setTabVal(sel, text) {
@@ -533,6 +556,7 @@ window.HLS = window.HLS || {};
     setTabVal('#tab-octave', octaveLabel(oct));
     setTabVal('#tab-dur', durLabel(dur, dotted));
     setTabVal('#tab-form', formLabel(fkeys));
+    updateKeyPreviews(oct, dur, dotted);
 
     // 顶部：正在写/改第几个音
     var pt = padText();
@@ -540,16 +564,16 @@ window.HLS = window.HLS || {};
     if (titleEl) titleEl.textContent = pt.title;
     if (subEl) subEl.textContent = pt.sub;
 
-    // 上一个/下一个音符
-    var showNav = state.mode === 'edit' && notes.length > 0 && !state.gracePick;
+    // 上一个/下一个音符：写谱时也能点 ◀ 直接改上一个，不用精确点谱面。
+    var showNav = notes.length > 0 && !state.gracePick && state.mode !== 'insert';
     var prev = $('#prev-note'), next = $('#next-note');
     if (prev) {
       prev.hidden = !showNav;
-      prev.disabled = showNav && state.sel <= 0;
+      prev.disabled = showNav && state.mode === 'edit' && state.sel <= 0;
     }
     if (next) {
       next.hidden = !showNav;
-      next.disabled = false;
+      next.disabled = showNav && state.mode === 'append';
     }
 
     // 继续写
@@ -823,14 +847,18 @@ window.HLS = window.HLS || {};
         // 插入模式：这一轮插入都沿用这个吹法
         state.insertForm = keys.slice();
         if (state.brush) state.brushForm = keys.slice();
+        state.view = 'notes';
         refreshPad();
+        requestAnimationFrame(scrollActiveIntoView);
         HLS.toast('插入音：' + formLabel(keys));
         return;
       }
       // 写谱模式：没写音符前选的吹法，留给“下一个音”
       state.pendingForm = keys.slice();
       if (state.brush) state.brushForm = keys.slice();
+      state.view = 'notes';
       refreshPad();
+      requestAnimationFrame(scrollActiveIntoView);
       HLS.toast('下一个音：' + formLabel(keys));
       return;
     }
@@ -845,13 +873,27 @@ window.HLS = window.HLS || {};
         state.gracePick = true;
         state.graceTarget = idx;
         render();
+        return;
+      }
+      if (wasBuilding) {
+        // 刚写完的音同时把吹法记给下一个音；选完直接回数字键
+        state.pendingForm = keys.slice();
+        if (state.brush) state.brushForm = keys.slice();
+        state.view = 'notes';
+        refreshPad();
+        requestAnimationFrame(scrollActiveIntoView);
       }
       return;
     }
     commit(function () {
       applyForm(state.song.notes[idx], keys);
-      if (wasBuilding && state.brush) state.brushForm = keys.slice();
-      state.view = hasGrace ? 'notes' : 'form';
+      if (wasBuilding) {
+        // 和音区/长短一样：刚写完的音改了，下一个音也用这个吹法
+        state.pendingForm = keys.slice();
+        if (state.brush) state.brushForm = keys.slice();
+      }
+      // 刚写完的音选完吹法自动回数字键；改旧音仍留在吹法面板方便继续调
+      state.view = (hasGrace || wasBuilding) ? 'notes' : 'form';
       state.gracePick = hasGrace;
       state.graceTarget = hasGrace ? idx : -1;
     });
