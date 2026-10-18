@@ -21,7 +21,7 @@
   --danger-deep: #a5321f;
 
   --shadow-card: 0 1px 2px rgba(30, 25, 15, 0.06), 0 10px 30px rgba(30, 25, 15, 0.06);
-  --shadow-float: 0 -2px 6px rgba(30, 25, 15, 0.05), 0 -14px 34px rgba(30, 25, 15, 0.08);
+  --shadow-float: 0 16px 40px rgba(30, 25, 15, 0.14), 0 2px 6px rgba(30, 25, 15, 0.06);
 
   --radius: 14px;
   --radius-sm: 10px;
@@ -44,6 +44,67 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+[hidden] { display: none !important; }
+
+/* ---------------- 通用按钮 ---------------- */
+
+.btn {
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 0 16px;
+  min-height: 52px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 140ms var(--ease-out), background 160ms var(--ease),
+    border-color 160ms var(--ease), box-shadow 160ms var(--ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 0 var(--accent-deep);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+}
+
+.btn-ghost { background: transparent; }
+
+.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-danger:hover { background: var(--danger-deep); border-color: var(--danger-deep); }
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  color: var(--muted);
+  cursor: not-allowed;
+  transform: none;
+}
+.btn:disabled:hover { background: var(--paper); border-color: var(--line-strong); }
+
 /* ---------------- 顶栏 ---------------- */
 
 .appbar {
@@ -52,7 +113,7 @@ body {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 12px 20px;
+  padding: 10px 20px;
   background: var(--paper);
   border-bottom: 1px solid var(--line);
   position: sticky;
@@ -65,17 +126,19 @@ body {
 .logo {
   display: grid;
   place-items: center;
-  width: 40px; height: 40px;
+  width: 38px; height: 38px;
   border-radius: 12px;
   background: var(--accent);
   color: #fff;
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 700;
 }
 
 .brand-name { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
 
-.filebar { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; }
+.filebar { display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch; }
+.appbar .btn { min-height: 48px; font-size: 16px; padding: 0 14px; }
+
 /* 文件组 / 打印组之间的竖分隔线 */
 .filebar-sep {
   width: 1px;
@@ -84,6 +147,7 @@ body {
   background: var(--line);
   margin: 0 2px;
 }
+
 /* 破坏性操作：文字用危险色，但保持克制（不做实心红） */
 .btn-danger-ghost { color: var(--danger); }
 @media (hover: hover) and (pointer: fine) {
@@ -101,35 +165,34 @@ body {
   border: 1.5px solid var(--accent);
   border-radius: var(--radius-sm);
   padding: 0 14px;
-  min-height: 44px;
+  min-height: 48px;
   cursor: pointer;
 }
 
 /* ---------------- 曲谱信息 ---------------- */
 
-/* 桌面：两行——标题/作者各占半行；调号/拍号/速度/打印排版排成一行 */
 .meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px 20px;
+  gap: 12px 18px;
   align-items: flex-end;
-  padding: 14px 0 8px;
+  padding: 12px 0 4px;
 }
 
-.field { display: flex; flex-direction: column; gap: 6px; }
-.field-grow { flex: 1 1 calc(50% - 10px); min-width: 220px; }
-.meta .field:not(.field-grow):not(.field-scale) { flex: 0 0 auto; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field-grow { flex: 1 1 260px; min-width: 220px; }
+.meta .field:not(.field-grow) { flex: 0 0 auto; }
 .field-label { font-size: 15px; color: var(--muted); font-weight: 700; }
 
 .field input {
   font: inherit;
-  font-size: 20px;
+  font-size: 19px;
   color: var(--ink);
   background: var(--paper);
   border: 2px solid var(--line-strong);
   border-radius: var(--radius-sm);
-  padding: 10px 14px;
-  min-height: 56px;
+  padding: 8px 14px;
+  min-height: 52px;
   width: 100%;
   transition: border-color 140ms var(--ease), box-shadow 140ms var(--ease);
 }
@@ -140,7 +203,7 @@ body {
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
-.field input[type="number"] { width: 110px; text-align: center; }
+.field input[type="number"] { width: 104px; text-align: center; }
 
 .stepper {
   display: flex;
@@ -149,17 +212,17 @@ body {
   border: 2px solid var(--line-strong);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  min-height: 56px;
+  min-height: 52px;
 }
 
 .stepper .step {
   font: inherit;
-  font-size: 24px;
+  font-size: 23px;
   font-weight: 700;
   color: var(--accent-deep);
   background: transparent;
   border: 0;
-  width: 52px;
+  width: 50px;
   cursor: pointer;
   transition: background 140ms var(--ease), transform 140ms var(--ease-out);
 }
@@ -177,41 +240,18 @@ body {
 }
 
 .btn-field {
-  min-height: 56px;
-  min-width: 90px;
+  min-height: 52px;
+  min-width: 88px;
   background: var(--paper);
   border: 2px solid var(--line-strong);
   border-radius: var(--radius-sm);
   font-weight: 700;
 }
 
-/* 打印排版（自动一页 / 两页） */
-.field-scale { flex: 1 1 260px; min-width: 260px; }
-
-.scale-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  min-height: 56px;
-}
-
-.scale-val {
-  min-width: 56px;
-  text-align: right;
-  font-weight: 700;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.fit-status { font-size: 15px; font-weight: 700; }
-.fit-status.ok { color: var(--accent-deep); }
-.fit-status.over { color: var(--pending); }
-
 /* ---------------- 乐谱舞台 ---------------- */
 
 .stage {
-  padding: 18px 0 4px;
+  padding: 14px 0 2px;
 }
 
 #pages {
@@ -234,115 +274,486 @@ body {
 
 .page { position: relative; }
 
-.page-num {
-  position: absolute;
-  top: 8px;
-  right: 14px;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--muted);
-}
-
 .scoresvg {
   display: block;
   width: 100%;
   height: auto;
 }
 
-/* ---------------- 状态 ---------------- */
+/* ---------------- 状态条 ---------------- */
 
 .status {
   display: flex;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 10px 0;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+  padding: 4px 2px;
   color: var(--muted);
-  font-size: 16px;
+  font-size: 15px;
 }
 
-#status-text { color: var(--accent-deep); font-weight: 700; }
-.status .hint { opacity: 0.8; }
-
-/* ---------------- 悬浮「继续添加」 ---------------- */
-/* 固定在编辑区右下角，始终可见、不折叠、手指易点 */
-.append-dock {
-  position: fixed;
-  right: 16px;
-  bottom: 20px;
-  z-index: 25;
-  pointer-events: none;
-}
-
-.btn-append {
-  pointer-events: auto;
-  min-height: 62px;
-  padding: 0 28px;
-  font-size: 20px;
+#status-text {
+  min-width: 0;
+  color: var(--accent-deep);
   font-weight: 700;
-  border-radius: 999px;
-  box-shadow: 0 12px 30px rgba(30, 25, 15, 0.24), 0 3px 8px rgba(30, 25, 15, 0.14);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.save-state {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.save-state::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+
+.save-state.saving::before { background: var(--pending); animation: hlsSaving 1s ease-in-out infinite; }
+.save-state.saved::before { background: var(--accent); }
+.save-state.error { color: var(--danger); }
+.save-state.error::before { background: var(--danger); }
+
+@keyframes hlsSaving {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ---------------- 工具栏外壳 ---------------- */
+
+.workspace {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 12px 20px 24px;
+  max-width: 1560px;
+  margin: 0 auto;
+}
+
+.pane-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.toolbar {
+  flex: 0 0 336px;
+  max-width: 336px;
+  align-self: flex-start;
+  position: sticky;
+  top: 84px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--bg-deep);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-float);
+  max-height: calc(100vh - 108px);
+  overflow: hidden;
+}
+
+/* 顶部：当前在写/改哪个音 */
+.pad-banner {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+}
+
+.pad-mode {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+#pad-title {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#pad-sub {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icon-btn {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-deep);
+  background: var(--paper);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 120ms var(--ease-out), background 140ms var(--ease);
+}
+
+.icon-btn:active { transform: scale(0.94); }
+.icon-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+.btn-return {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 15px;
+  border-radius: 10px;
+}
+/* 倚音选音高时，这个按钮是“取消”，用中性色，避免看成确认 */
+.btn-return.is-cancel {
+  background: var(--paper);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.pad-menu { display: none; }
+
+/* 四个页签：音符 / 音区 / 长短 / 吹法 */
+.pad-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.pad-tab {
+  font: inherit;
+  min-width: 0;
+  height: 54px;
+  padding: 3px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 140ms var(--ease), border-color 140ms var(--ease);
+}
+
+.tab-name { font-size: 15px; font-weight: 700; line-height: 1.15; }
+.tab-val {
+  max-width: 100%;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pad-tab.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.pad-tab.active .tab-val { color: var(--accent-deep); }
+
+/* 页签内容区：自身滚动，页签/操作按钮始终可见 */
+.pad-body {
+  flex: 0 1 auto;
+  min-height: 134px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 0;
+}
+
+.pad-view { display: none; }
+body[data-view="notes"] .view-notes,
+body[data-view="octave"] .view-octave,
+body[data-view="dur"] .view-dur,
+body[data-view="form"] .view-form,
+body[data-view="more"] .view-more { display: block; }
+
+.pad-hint {
+  margin: 8px 2px 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* 音符键盘：4 × 2，大按键 */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.key {
+  font: inherit;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 12px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 120ms var(--ease-out), background 140ms var(--ease),
+    box-shadow 140ms var(--ease), border-color 140ms var(--ease);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .btn-append:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+  .key:hover { background: var(--accent-soft); border-color: var(--accent); }
 }
 
-@media (min-width: 901px) {
-  /* 桌面：不使用悬浮「继续添加」，由工具栏与键盘操作代替 */
-  .append-dock { display: none; }
-}
+.key:active { transform: scale(0.95); }
 
-body.menu-open .append-dock,
-body.preview-open .append-dock { display: none; }
-
-/* ---------------- 「再点一下即上屏」标记 ---------------- */
-
-.ready-badge {
-  display: none;
-  align-items: center;
-  gap: 7px;
-  align-self: flex-start;
-  font-size: 14px;
-  font-weight: 700;
+.key.active {
   color: var(--accent-deep);
   background: var(--accent-soft);
-  border: 1px solid var(--accent);
-  border-radius: 999px;
-  padding: 4px 12px;
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
-.ready-badge::before {
-  content: "";
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
+.key-rest {
+  font-size: 28px;
+  position: relative;
+  padding-bottom: 12px;
+}
+
+.key-rest small {
+  position: absolute;
+  bottom: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted);
+}
+
+/* 选项按钮：图标 + 文字，老人不用猜图案 */
+.choice-grid {
+  display: grid;
+  gap: 6px;
+}
+.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.choice {
+  font: inherit;
+  min-width: 0;
+  min-height: 80px;
+  padding: 4px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 140ms var(--ease), border-color 140ms var(--ease),
+    box-shadow 140ms var(--ease);
+}
+
+.choice .ic {
+  width: 100%;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+}
+
+.choice .ic svg {
+  display: block;
+  height: 44px;
+  width: auto;
+  max-width: 100%;
+}
+
+.choice .lb {
+  max-width: 100%;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.form-choice { min-height: 86px; }
+.form-choice .ic { height: 52px; }
+.form-choice .ic svg { height: 52px; }
+
+@media (hover: hover) and (pointer: fine) {
+  .choice:hover { background: var(--accent-soft); border-color: var(--accent); }
+}
+
+.choice.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.choice.active .lb { color: var(--accent-deep); }
+.choice.active .ic { color: var(--accent-deep); }
+
+.choice-wide {
+  flex-direction: row;
+  gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  margin-top: 6px;
+  padding: 0 12px;
+}
+.choice-wide .ic { width: 64px; height: 38px; flex: 0 0 64px; }
+.choice-wide .ic svg { height: 38px; }
+.choice-wide .lb { font-size: 15px; }
+.choice-wide .lb small { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+
+.btn-expand {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 6px;
+  font-size: 15px;
+  background: var(--paper);
+  border-color: var(--line-strong);
+}
+
+.form-extra-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 6px;
+}
+.form-extra-list[hidden] { display: none !important; }
+.form-extra-list .btn { min-height: 48px; font-size: 14px; padding: 0 4px; }
+
+.brush-btn {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 8px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.brush-btn b {
+  flex: 0 0 auto;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.brush-btn.active {
+  color: #fff;
+  background: var(--pending);
+  border-color: var(--pending);
+}
+.brush-btn.active b { color: #fff; }
+
+/* 「更多符号」面板 */
+.more-group { margin-bottom: 10px; }
+.more-group h4 {
+  margin: 0 0 5px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.more-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.more-btn {
+  min-height: 44px;
+  font-size: 14px;
+  padding: 0 10px;
+}
+
+.more-btn.active {
+  color: #fff;
   background: var(--accent);
-  animation: hlsReadyPulse 1.1s ease-in-out infinite;
+  border-color: var(--accent);
 }
 
-/* 只在“最后一步”显示：再点一下，本音就完成（随后光标变成闪动竖线） */
-body.ready-finish[data-step="form"] .step-form .ready-badge,
-body.ready-finish[data-step="grace"] .step-pitch .ready-badge { display: inline-flex; }
-
-@keyframes hlsReadyPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.3; transform: scale(0.7); }
+/* 底部操作：撤销 / 重做 / 删除 / 更多符号 */
+.pad-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
 }
 
-/* 可完成时，对应按钮轻轻呼吸 */
-body.ready-finish[data-step="form"] .step-form .btn-form:not(.active),
-body.ready-finish[data-step="grace"] .step-pitch .key:not(.active) {
-  animation: hlsKeyReady 1.6s ease-in-out infinite;
+.pad-actions .btn {
+  min-height: 50px;
+  padding: 0 2px;
+  font-size: 15px;
 }
 
-@keyframes hlsKeyReady {
-  0%, 100% { box-shadow: inset 0 0 0 0 rgba(43, 111, 72, 0); }
-  50% { box-shadow: inset 0 0 0 2.5px rgba(43, 111, 72, 0.5); }
+.pad-actions .btn.active {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* 选中一个音后，操作区多一个「插入」：在它后面补音 */
+#insert-btn { display: none; }
+.btn-insert { color: var(--accent-deep); }
+body[data-mode="edit"] .pad-actions,
+body[data-mode="insert"] .pad-actions {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+body[data-mode="edit"] #insert-btn,
+body[data-mode="insert"] #insert-btn { display: block; }
+
+/* 焦点环：键盘 / 辅助设备用户可见 */
+.btn:focus-visible,
+.key:focus-visible,
+.choice:focus-visible,
+.pad-tab:focus-visible,
+.icon-btn:focus-visible,
+.brush-btn:focus-visible,
+.menu-toggle:focus-visible,
+.stepper .step:focus-visible,
+.form-extra-list .btn:focus-visible,
+.help-details summary:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ---------------- 上屏动效 ---------------- */
-/* 新音符落到谱面上：由大变小 + 落下 + 数字短暂泛绿 */
+
 .scoresvg .note.note-enter {
   animation: hlsNoteLand 520ms cubic-bezier(0.23, 1, 0.32, 1);
   transform-box: fill-box;
@@ -364,200 +775,6 @@ body.ready-finish[data-step="grace"] .step-pitch .key:not(.active) {
   100% { fill: var(--ink); }
 }
 
-/* ---------------- 工具栏（右侧栏） ---------------- */
-
-.workspace {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  padding: 16px 20px 24px;   /* 顶部留白，和上方菜单栏拉开距离 */
-  max-width: 1560px;
-  margin: 0 auto;
-}
-
-.pane-main {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.toolbar {
-  flex: 0 0 336px;
-  max-width: 336px;
-  align-self: flex-start;
-  position: sticky;
-  top: 96px;                 /* 菜单栏(~81px) + 间距 */
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 18px;
-  background: var(--bg-deep);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
-  /* 悬浮感：比纸面更重的投影，像浮在上层 */
-  box-shadow: 0 16px 40px rgba(30, 25, 15, 0.14), 0 2px 6px rgba(30, 25, 15, 0.06);
-  max-height: calc(100vh - 120px);
-  overflow: auto;
-}
-
-/* 桌面：分组之间加分隔线，层次更清楚 */
-@media (min-width: 901px) {
-  .toolbar .group + .group {
-    border-top: 1px solid var(--line);
-    padding-top: 14px;
-  }
-}
-
-.group { display: flex; flex-direction: column; gap: 8px; }
-
-.group-title {
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: var(--ink);
-  text-transform: none;
-}
-
-.group-title b { color: var(--accent-deep); font-size: 16px; }
-
-.row { display: flex; gap: 10px; flex-wrap: wrap; }
-
-/* 通用按钮 */
-.btn {
-  font: inherit;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--ink);
-  background: var(--paper);
-  border: 2px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  padding: 0 16px;
-  min-height: 56px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: transform 140ms var(--ease-out), background 160ms var(--ease),
-    border-color 160ms var(--ease), box-shadow 160ms var(--ease);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .btn:hover { border-color: var(--accent); background: var(--accent-soft); }
-}
-
-.btn:active { transform: scale(0.97); }
-
-.btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  box-shadow: 0 2px 0 var(--accent-deep);
-}
-
-.btn-sym { min-width: 96px; }
-
-/* 「写法」一键组合按钮 */
-.btn-form {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--ink);
-}
-.btn-brush { background: var(--paper); border-color: var(--line-strong); color: var(--ink); }
-.btn-brush.active { background: var(--pending); border-color: var(--pending); color: #fff; }
-
-.btn-more { width: 100%; justify-content: center; }
-
-/* 手机上常驻的「菜单」按钮（桌面隐藏：文件栏直接显示在顶栏） */
-.group-menu { display: none; }
-.btn-menu { width: 100%; justify-content: center; }
-
-.row-more { display: none; }
-body.more-open .row-more { display: flex; }
-
-/* 分步输入：一次只显示一步 */
-.step-group { display: none; }
-.step-group .group-title { display: block; }
-body[data-step="pitch"] .step-pitch,
-body[data-step="grace"] .step-pitch,
-body[data-step="octave"] .step-octave,
-body[data-step="dur"] .step-dur,
-body[data-step="form"] .step-form { display: flex; }
-
-.btn-danger {
-  background: var(--danger);
-  border-color: var(--danger);
-  color: #fff;
-}
-@media (hover: hover) and (pointer: fine) {
-  .btn-danger:hover { background: var(--danger-deep); border-color: var(--danger-deep); }
-}
-
-.btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-@media (hover: hover) and (pointer: fine) {
-  .btn-primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
-}
-
-.btn-ghost { background: transparent; }
-
-.btn:disabled {
-  opacity: 0.55;
-  color: var(--muted);
-  cursor: not-allowed;
-  transform: none;
-}
-.btn:disabled:hover { background: var(--paper); border-color: var(--line-strong); }
-
-/* 焦点环：键盘 / 辅助设备用户可见 */
-.btn:focus-visible,
-.key:focus-visible,
-.menu-toggle:focus-visible,
-.stepper .step:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* 音符键：无方框，选中用红色表示 */
-.key {
-  font: inherit;
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--ink);
-  background: transparent;
-  border: none;
-  border-radius: 12px;
-  width: 56px;
-  height: 60px;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  line-height: 1;
-  transition: transform 120ms var(--ease-out), background 140ms var(--ease),
-    box-shadow 140ms var(--ease);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .key:hover { background: var(--accent-soft); }
-}
-
-.key:active { transform: scale(0.9); }
-/* 选中项：浅色底 + 描边环，醒目但不占位、不缩小数字 */
-.key.active {
-  color: var(--accent);
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 2.5px var(--accent);
-}
-
-.key-rest { width: 64px; font-size: 26px; position: relative; }
-.key-rest small {
-  position: absolute;
-  bottom: 2px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--muted);
-}
-
 /* ---------------- 提示条 ---------------- */
 
 #toast {
@@ -574,14 +791,14 @@ body[data-step="form"] .step-form { display: flex; }
   opacity: 0;
   pointer-events: none;
   transition: opacity 200ms var(--ease), transform 220ms var(--ease-out);
-  z-index: 60;
+  z-index: 100;
   max-width: 88vw;
   text-align: center;
 }
 
 #toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
 
-/* ---------------- 确认对话框（删除 / 清空等破坏性操作） ---------------- */
+/* ---------------- 确认对话框 ---------------- */
 
 .dialog {
   position: fixed;
@@ -626,10 +843,7 @@ body[data-step="form"] .step-form { display: flex; }
   text-align: center;
 }
 
-.dialog-actions {
-  display: flex;
-  gap: 14px;
-}
+.dialog-actions { display: flex; gap: 14px; }
 
 .dialog-actions .btn {
   flex: 1 1 0;
@@ -637,7 +851,7 @@ body[data-step="form"] .step-form { display: flex; }
   font-size: 19px;
 }
 
-/* ---------------- 快捷键帮助 ---------------- */
+/* ---------------- 使用说明 ---------------- */
 
 .help {
   position: fixed;
@@ -664,8 +878,8 @@ body.help-open { overflow: hidden; }
 
 .help-card {
   width: 100%;
-  max-width: 680px;
-  max-height: 86vh;
+  max-width: 720px;
+  max-height: 88vh;
   display: flex;
   flex-direction: column;
   background: var(--paper);
@@ -683,37 +897,64 @@ body.help-open { overflow: hidden; }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 18px 22px;
+  padding: 16px 22px;
   border-bottom: 1px solid var(--line);
 }
 
-.help-title { margin: 0; font-size: 21px; font-weight: 700; }
+.help-title { margin: 0; font-size: 22px; font-weight: 700; }
 
 .help-body {
-  padding: 8px 22px 20px;
+  padding: 6px 22px 22px;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
+  font-size: 17px;
 }
 
-.help-sec { margin: 14px 0; }
+.help-sec { margin: 16px 0; }
 
 .help-sec h3 {
   margin: 0 0 8px;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--accent-deep);
 }
 
+.help-steps {
+  margin: 0;
+  padding-left: 22px;
+  line-height: 1.7;
+}
+.help-steps li { margin: 0 0 10px; }
+
 .help-row {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 14px;
-  padding: 5px 0;
+  padding: 6px 0;
   border-bottom: 1px dashed var(--line);
 }
 
-.help-k { flex: 0 0 auto; min-width: 220px; }
-.help-v { color: var(--muted); font-size: 15px; }
+.help-k { flex: 0 0 auto; min-width: 124px; font-weight: 700; color: var(--ink); }
+.help-v { color: var(--muted); font-size: 16px; }
+
+.help-details {
+  margin-top: 18px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.help-details summary {
+  cursor: pointer;
+  padding: 8px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent-deep);
+}
+
+.help-details .help-sec { margin: 12px 0; }
+.help-details .help-sec h3 { font-size: 15px; }
+.help-details .help-v { font-size: 15px; }
+.help-details .help-k { min-width: 190px; }
 
 .help kbd {
   display: inline-block;
@@ -734,7 +975,7 @@ body.help-open { overflow: hidden; }
 .help-note {
   margin: 16px 0 0;
   padding: 12px 14px;
-  font-size: 14px;
+  font-size: 14.5px;
   line-height: 1.7;
   color: var(--muted);
   background: var(--accent-soft);
@@ -756,14 +997,41 @@ body.help-open { overflow: hidden; }
 .preview-bar {
   flex: 0 0 auto;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
   padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
   background: var(--paper);
   border-bottom: 1px solid var(--line);
 }
 
+.preview-head { display: flex; align-items: center; gap: 10px; }
+
 .preview-title { margin-right: auto; font-size: 19px; font-weight: 700; }
+
+.preview-fit {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-deep);
+}
+.preview-fit.over { color: var(--pending); }
+
+.preview-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.preview-tools .btn { min-height: 46px; font-size: 16px; padding: 0 12px; }
+
+.preview-scale {
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.preview-hint {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
 
 .preview-body {
   flex: 1 1 auto;
@@ -778,7 +1046,29 @@ body.help-open { overflow: hidden; }
 
 body.preview-open { overflow: hidden; }
 
-/* 减少动态：去掉位移/缩放类动效，保留有助于理解的透明/颜色过渡 */
+/* 打印预览：每页按 A4 纸比例（210:297）显示。
+   外边距用 cqw 按纸张宽度等比缩放，等价于打印时的 4mm；内容从纸顶排。 */
+#preview .page-frame {
+  flex: 0 0 auto;
+  width: 100%;
+  /* 尽量让一整张 A4 同时出现在窗口里；窗口很高时最多 920px 宽 */
+  max-width: min(920px, calc((100dvh - 210px) * 210 / 297));
+  container-type: inline-size;
+}
+
+#preview .paper.page {
+  aspect-ratio: 210 / 297;
+  padding: 1.9047619cqw;
+  overflow: hidden;
+}
+
+/* ---------------- 空谱引导（SVG 内） ---------------- */
+
+.scoresvg .empty-hint { font-size: 20px; font-weight: 600; fill: #8b8377; }
+.scoresvg .empty-hint-sub { font-size: 16px; font-weight: 500; fill: #7d7568; }
+
+/* ---------------- 减少动态 ---------------- */
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition-duration: 0.01ms !important;
@@ -790,14 +1080,15 @@ body.preview-open { overflow: hidden; }
   }
   .btn:active,
   .key:active,
+  .choice:active,
+  .icon-btn:active,
   .stepper .step:active { transform: none !important; }
-  /* 光标不闪烁，但保持可见 */
   .scoresvg .insertcaret { animation: none !important; opacity: 1 !important; }
 }
 
 /* ================= 手机 / 窄屏布局 =================
-   整屏三段式：顶栏(含菜单) + 谱子区(独立滚动、自动聚焦) + 底部固定工具栏。
-   目标：一屏看全所有输入按钮，不用上下滚动去找按钮。 */
+   整屏三段式：谱面区（独立滚动） + 状态条 + 底部输入面板。
+   曲谱信息与文件操作收进「菜单」，给谱面留出最大空间。 */
 @media (max-width: 900px) {
   html, body { height: 100%; }
   body {
@@ -807,7 +1098,7 @@ body.preview-open { overflow: hidden; }
     overflow: hidden;
   }
 
-  /* 顶部栏默认完全隐藏，整块顶部让给谱面；点底部工具栏「菜单」才展开 */
+  /* 顶部栏默认隐藏，点输入面板的「☰」才展开 */
   .appbar {
     display: none;
     position: relative;
@@ -827,12 +1118,18 @@ body.preview-open { overflow: hidden; }
   }
   .brand-name { font-size: 18px; }
   .logo { width: 36px; height: 36px; font-size: 20px; }
-  /* 顶栏：品牌与「关闭」同一行，文件网格换到下一行 */
-  .menu-toggle { display: inline-flex; align-items: center; margin-left: auto; min-height: 48px; font-size: 17px; order: 1; }
+  .menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+    min-height: 48px;
+    font-size: 17px;
+    order: 1;
+  }
 
-  /* 文件操作默认收起；菜单展开时排成整齐的 2 列网格 */
+  /* 文件操作默认收起；菜单展开时排成 3 列网格 */
   .filebar { display: none; width: 100%; gap: 8px; flex-wrap: wrap; order: 2; }
-  .filebar-sep { display: none; } /* 手机网格里不显示分隔线 */
+  .filebar-sep { display: none; }
   body.menu-open .filebar {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -853,9 +1150,10 @@ body.preview-open { overflow: hidden; }
     flex: 1 1 auto;
     min-height: 0;
     flex-direction: column;
+    align-items: stretch;
     gap: 0;
     padding: 0;
-    margin: 0;         /* 覆盖 base 的 margin:0 auto，否则会被压成 fit-content 并居中 */
+    margin: 0;
     max-width: none;
   }
   .pane-main {
@@ -866,7 +1164,7 @@ body.preview-open { overflow: hidden; }
     width: 100%;
   }
 
-  /* 曲谱信息默认收起，展开时占有限高度并可自身滚动 */
+  /* 曲谱信息默认收起；菜单展开时占满剩余高度并自身滚动 */
   .meta {
     display: none;
     flex: 0 0 auto;
@@ -876,7 +1174,6 @@ body.preview-open { overflow: hidden; }
     gap: 10px;
     border-bottom: 1px solid var(--line);
   }
-  /* 曲谱信息：菜单展开时单列整齐排布，控件填满整行 */
   body.menu-open .meta {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -898,14 +1195,12 @@ body.preview-open { overflow: hidden; }
   body.menu-open .meta .field input,
   body.menu-open .meta .field input[type="number"],
   body.menu-open .meta .stepper,
-  body.menu-open .meta .btn-field,
-  body.menu-open .meta .scale-wrap { width: 100%; }
+  body.menu-open .meta .btn-field { width: 100%; }
+  body.menu-open .meta .field input[type="number"] { width: 100%; }
   body.menu-open .meta .stepper .step { width: 66px; }
   body.menu-open .meta .stepper .step-val { flex: 1 1 auto; }
-  body.menu-open .meta .scale-wrap .btn-field { flex: 1 1 0; }
-  body.menu-open .meta .scale-val { flex: 0 0 auto; }
 
-  /* 谱子区：独立滚动，输入时自动聚焦到当前音符 */
+  /* 谱面区：独立滚动，输入时自动聚焦到当前音符 */
   .stage {
     flex: 1 1 auto;
     min-height: 0;
@@ -916,120 +1211,104 @@ body.preview-open { overflow: hidden; }
   .paper { padding: 14px; border-radius: 10px; }
   #pages { gap: 12px; }
 
-  .status { flex: 0 0 auto; padding: 6px 12px; font-size: 16px; gap: 8px; }
-  .status .hint { display: none; }
+  .status {
+    flex: 0 0 auto;
+    min-height: 32px;
+    padding: 5px 12px;
+    font-size: 14.5px;
+    gap: 8px;
+  }
+  .save-state { font-size: 12.5px; }
 
-  /* 悬浮按钮：手机端浮在谱面区右下角（bottom 由脚本按实际布局计算，避开底部工具栏） */
-  .append-dock { right: 14px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
-  .btn-append { min-height: 58px; padding: 0 24px; font-size: 19px; }
-
-  /* 展开菜单时只留「设置 / 文件」：不显示乐谱、状态和打谱工具栏 */
+  /* 菜单展开时只显示文件与曲谱信息，不显示谱面和输入面板 */
   body.menu-open .stage,
-  body.menu-open .status { display: none; }
+  body.menu-open .status,
+  body.menu-open .toolbar { display: none; }
 
-  /* 底部工具栏：悬浮卡片，四周留白 + 圆角 + 重投影，和谱面区明显分开 */
+  /* 底部输入面板：悬浮卡片，页签和操作按钮始终可见 */
   .toolbar {
     flex: 0 0 auto;
-    order: 0;
+    align-self: stretch;
     width: auto;
     max-width: none;
-    max-height: 60vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    flex-direction: column;
-    gap: 6px;
+    max-height: 62vh;
     margin: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px));
     padding: 10px;
     border-radius: 16px;
+    gap: 8px;
+    position: relative;
+    top: auto;
+    z-index: 16;
     box-shadow: 0 8px 28px rgba(30, 25, 15, 0.18), 0 2px 6px rgba(30, 25, 15, 0.08);
   }
-  .group { gap: 4px; }
-  /* 手机上保留大字步骤标题，让老人知道当前在第几步 */
-  .group-title { display: block; font-size: 17px; }
-  /* ②③④ 的标题在手机上省略（状态栏已说明当前步骤），省出高度、减少滚动 */
-  body[data-step="octave"] .step-octave .group-title,
-  body[data-step="dur"] .step-dur .group-title,
-  body[data-step="form"] .step-form .group-title { display: none; }
-  .row { gap: 8px; }
-  .btn { min-height: 54px; padding: 0 12px; font-size: 17px; border-radius: 10px; }
-  .key { flex: 1 1 0; width: auto; min-width: 0; height: 56px; font-size: 30px; border-radius: 12px; }
-  .key-rest { width: auto; font-size: 26px; }
-  .btn-sym { min-width: 0; }
-  /* 菜单按钮排在编辑区最下面，随工具栏一起滚动 */
-  .group-menu { display: flex; }
-  /* 菜单展开时收起整个底部工具栏，空间全给文件操作/曲谱信息（顶栏的「✕ 关闭」用于退出） */
-  body.menu-open .toolbar { display: none; }
 
-  /* 提示条移到顶栏下方，避免被底部工具栏遮住 */
+  .pad-banner { min-height: 44px; gap: 6px; }
+  #pad-title { font-size: 17px; }
+  #pad-sub { font-size: 13px; }
+  .icon-btn { width: 44px; height: 44px; font-size: 17px; }
+  .btn-return { min-height: 44px; font-size: 14px; padding: 0 10px; }
+  .pad-menu { display: grid; }
+
+  .pad-tabs { gap: 5px; }
+  .pad-tab { height: 52px; }
+  .tab-name { font-size: 14.5px; }
+  .tab-val { font-size: 12px; }
+
+  .pad-body { min-height: 130px; }
+
+  .keypad { gap: 7px; }
+  .key { height: 60px; font-size: 31px; border-radius: 11px; }
+  .key-rest { font-size: 27px; }
+  .key-rest small { font-size: 11px; }
+
+  .choice { min-height: 78px; }
+  .choice .ic { height: 42px; }
+  .choice .ic svg { height: 42px; }
+  .choice .lb { font-size: 13.5px; }
+  .form-choice { min-height: 84px; }
+  .form-choice .ic { height: 50px; }
+  .form-choice .ic svg { height: 50px; }
+
+  .pad-actions { gap: 5px; }
+  .pad-actions .btn { min-height: 48px; font-size: 14.5px; }
+  .btn { min-height: 50px; font-size: 17px; border-radius: 10px; }
+
+  /* 提示条移到顶栏下方，避免被底部输入面板遮住 */
   #toast {
     top: calc(60px + env(safe-area-inset-top, 0px));
     bottom: auto;
     font-size: 17px;
   }
+  body.preview-open #toast {
+    top: auto;
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* 使用说明：手机上留大边距、字号不缩小 */
+  .help { padding: 10px; }
+  .help-card { max-height: 92vh; }
+  .help-head { padding: 14px 16px; }
+  .help-title { font-size: 20px; }
+  .help-body { padding: 4px 16px 18px; font-size: 16px; }
+  .help-k { min-width: 92px; }
+  .help-v { font-size: 15px; }
+  .help-details .help-k { min-width: 120px; }
+
+  .dialog-actions .btn { min-height: 56px; font-size: 18px; }
 }
 
-/* 更小的手机屏：不再缩小字号，只收紧留白 */
+/* 更小的手机屏：只收紧留白，不缩小文字 */
 @media (max-width: 640px) {
-  .brand-name { display: none; }
-  .btn { padding: 0 10px; }
-  .row { gap: 6px; }
+  .filebar .btn { padding: 0 4px; }
+  .pad-tab { height: 50px; }
+  .key { height: 58px; font-size: 30px; }
+  .choice { min-height: 76px; }
+  .form-choice { min-height: 82px; }
+  .pad-actions .btn { font-size: 14px; }
 }
 
-/* 「写法 / 音区 / 时值」按钮：只显示图案，不要方块；选中时淡色高亮 */
-.btn-form,
-.btn-pic {
-  display: grid;
-  place-items: center;
-  width: 78px;
-  min-width: 78px;
-  height: 74px;
-  min-height: 74px;
-  padding: 0;
-  background: transparent;
-  border-color: transparent;
-  border-radius: 16px;
-  box-shadow: none;
-}
-/* ④ 写法的图案再放大一些，老人看得清 */
-.btn-form {
-  width: 92px;
-  min-width: 92px;
-  height: 90px;
-  min-height: 90px;
-}
-@media (hover: hover) and (pointer: fine) {
-  .btn-form:hover,
-  .btn-pic:hover { background: var(--accent-soft); border-color: transparent; }
-}
-.btn-form .formpic,
-.btn-pic .formpic {
-  height: 100%;
-  width: auto;
-  max-width: 100%;
-  margin: 0 auto;
-}
-/* 选中项：浅色底 + 外描边环（外环不挤占图标空间，图案大小不变） */
-.btn-form.active,
-.btn-pic.active {
-  background: var(--accent-soft);
-  border-color: transparent;
-  color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent);
-}
-@media (max-width: 900px) {
-  .btn-form,
-  .btn-pic {
-    width: 62px;
-    min-width: 62px;
-    height: 54px;
-    min-height: 54px;
-    padding: 0;
-    border-radius: 12px;
-  }
-  .btn-form {
-    width: 78px;
-    min-width: 78px;
-    height: 74px;
-    min-height: 74px;
-  }
-}
+/* 宽选项（附点）保持紧凑：优先级高于手机端的 .choice 通用高度 */
+.pad-view .choice-wide { min-height: 54px; }
+.pad-view .choice-wide .ic { height: 38px; }
+.pad-view .choice-wide .ic svg { height: 38px; }
+.pad-view .choice-wide .lb { font-size: 15px; }

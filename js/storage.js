@@ -6,7 +6,12 @@ window.HLS = window.HLS || {};
   var KEY = 'hulusi.song.v1';
 
   function save(song) {
-    try { localStorage.setItem(KEY, JSON.stringify(song)); } catch (e) {}
+    try {
+      localStorage.setItem(KEY, JSON.stringify(song));
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   function load() {

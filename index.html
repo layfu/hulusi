@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>葫芦丝打谱</title>
-<link rel="stylesheet" href="css/base.css?v=6">
-<link rel="stylesheet" href="css/print.css?v=6" media="print">
+<link rel="stylesheet" href="css/base.css?v=9">
+<link rel="stylesheet" href="css/print.css?v=9" media="print">
 </head>
-<body>
+<body data-view="notes" data-mode="append">
 
 <header class="appbar">
   <div class="brand">
@@ -15,15 +15,12 @@
     <span class="brand-name">葫芦丝打谱</span>
   </div>
   <nav class="filebar" aria-label="文件与打印">
-    <button class="btn btn-ghost" data-file="open">打开</button>
-    <button class="btn btn-ghost" data-file="save">保存文件</button>
-    <button class="btn btn-ghost btn-danger-ghost" data-file="new">清空</button>
+    <button class="btn btn-ghost" data-file="open">打开作品</button>
+    <button class="btn btn-ghost" data-file="save" title="下载一份备份文件，可在别的设备打开">存到文件</button>
+    <button class="btn btn-ghost btn-danger-ghost" data-file="new">新建</button>
     <span class="filebar-sep" aria-hidden="true"></span>
-    <button class="btn btn-ghost" data-file="preview">打印预览</button>
     <button class="btn btn-ghost" data-file="print">打印</button>
-    <button class="btn btn-ghost" data-file="pdf">导出 PDF</button>
-    <span class="filebar-sep" aria-hidden="true"></span>
-    <button class="btn btn-ghost" data-act="help" id="help-btn">⌨ 快捷键帮助</button>
+    <button class="btn btn-ghost" data-act="help" id="help-btn">? 说明</button>
   </nav>
   <button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false">☰ 菜单</button>
 </header>
@@ -56,132 +53,207 @@
     <span class="field-label">速度 ♩=</span>
     <input id="meta-tempo" type="number" min="20" max="300" step="1" value="60">
   </label>
-  <div class="field field-scale">
-    <span class="field-label">打印排版 <b id="fit-status" class="fit-status"></b></span>
-    <div class="scale-wrap">
-      <button class="btn btn-field" id="autofit-btn" title="自动取最大字号，铺满一张 A4">自动一页</button>
-      <button class="btn btn-field" id="autofit2-btn" title="自动分成两页，每页尽量大，字号一致">自动两页</button>
-      <span id="scale-val" class="scale-val">100%</span>
-    </div>
-  </div>
 </section>
 
 <main class="stage">
   <div id="pages"></div>
 </main>
 
-<div class="append-dock" id="append-dock">
-  <button class="btn btn-primary btn-append" data-act="append" type="button"
-    aria-label="继续添加音符">＋ 继续添加</button>
-</div>
-
 <div class="status" id="status-bar">
-  <span id="status-text">正在添加新音符</span>
-  <span class="hint" id="key-hint">键盘：音符 qwertyu 低音 · 1234567 中音 · 890-=iop 高音 · p 倍高音1 · ` 休止；时值 zxcvbnm；f/g 降升八度；. 附点</span>
+  <span id="status-text" aria-live="polite">点数字 1–7，开始写谱</span>
+  <span class="save-state" id="save-state" aria-live="polite">自动保存已开启</span>
 </div>
 
   </div><!-- /pane-main -->
 
   <aside class="toolbar" role="toolbar" aria-label="打谱工具栏">
 
-  <div class="group step-group step-pitch">
-    <span class="group-title" id="pitch-title">① 音符（点数字加一个）</span>
-    <span class="ready-badge" aria-hidden="true">再点一下即上屏</span>
-    <div class="row">
-      <button class="key" data-note="1">1</button>
-      <button class="key" data-note="2">2</button>
-      <button class="key" data-note="3">3</button>
-      <button class="key" data-note="4">4</button>
-      <button class="key" data-note="5">5</button>
-      <button class="key" data-note="6">6</button>
-      <button class="key" data-note="7">7</button>
-      <button class="key key-rest" data-note="0">0<small>休止</small></button>
+    <div class="pad-banner">
+      <button class="icon-btn" data-act="prev-note" id="prev-note" type="button"
+        aria-label="上一个音符" title="上一个音符" hidden>◀</button>
+      <div class="pad-mode">
+        <strong id="pad-title">写第一个音</strong>
+        <span id="pad-sub">中音 · 四分 · 素音</span>
+      </div>
+      <button class="icon-btn" data-act="next-note" id="next-note" type="button"
+        aria-label="下一个音符" title="下一个音符" hidden>▶</button>
+      <button class="btn btn-primary btn-return" data-act="append" id="append-btn" type="button" hidden>继续写</button>
+      <button class="icon-btn pad-menu" data-act="menu" id="menu-button" type="button"
+        aria-label="菜单" title="打开菜单">☰</button>
     </div>
-  </div>
 
-  <div class="group step-group step-octave">
-    <span class="group-title">② 音区（可选） <b id="octave-ind">中音</b></span>
-    <div class="row">
-      <button class="btn btn-pic" data-act="octave-down">低八度</button>
-      <button class="btn btn-pic" data-act="octave-mid">中音</button>
-      <button class="btn btn-pic" data-act="octave-up">高八度</button>
+    <div class="pad-tabs" role="tablist" aria-label="输入设置">
+      <button class="pad-tab active" data-view="notes" type="button" role="tab" aria-selected="true">
+        <span class="tab-name">音符</span>
+        <span class="tab-val" id="tab-note">写谱</span>
+      </button>
+      <button class="pad-tab" data-view="octave" type="button" role="tab" aria-selected="false">
+        <span class="tab-name">音区</span>
+        <span class="tab-val" id="tab-octave">中音</span>
+      </button>
+      <button class="pad-tab" data-view="dur" type="button" role="tab" aria-selected="false">
+        <span class="tab-name">长短</span>
+        <span class="tab-val" id="tab-dur">四分</span>
+      </button>
+      <button class="pad-tab" data-view="form" type="button" role="tab" aria-selected="false">
+        <span class="tab-name">吹法</span>
+        <span class="tab-val" id="tab-form">素音</span>
+      </button>
     </div>
-  </div>
 
-  <div class="group step-group step-dur">
-    <span class="group-title">③ 时值（可选）</span>
-    <div class="row">
-      <button class="btn btn-pic" data-dur="whole">全音符</button>
-      <button class="btn btn-pic" data-dur="half">二分</button>
-      <button class="btn btn-pic" data-dur="quarter">四分</button>
-      <button class="btn btn-pic" data-dur="eighth">八分</button>
-      <button class="btn btn-pic" data-dur="sixteenth">十六分</button>
-      <button class="btn btn-pic" data-dur="dur32">三十二分</button>
-      <button class="btn btn-pic" data-act="dot">附点 ·</button>
-    </div>
-  </div>
+    <div class="pad-body" id="pad-body">
 
-  <div class="group step-group step-form">
-    <span class="group-title">④ 写法（可选）</span>
-    <span class="ready-badge" aria-hidden="true">再点一下即上屏</span>
-    <div class="row row-forms">
-      <button class="btn btn-form" data-form="">素音</button>
-      <button class="btn btn-form" data-form="single">吐</button>
-      <button class="btn btn-form" data-form="breath">吸气 v</button>
-      <button class="btn btn-form" data-form="single,breath">吐+吸气</button>
-      <button class="btn btn-form" data-form="da">打音</button>
-      <button class="btn btn-form" data-form="bo">波音 ~</button>
-      <button class="btn btn-form" data-form="breath,bo">吸气+波音</button>
-      <button class="btn btn-form" data-form="up">上滑</button>
-      <button class="btn btn-form" data-form="down">下滑</button>
-      <button class="btn btn-form" data-form="up,single">上滑+吐</button>
-      <button class="btn btn-form" data-form="down,single">下滑+吐</button>
-      <button class="btn btn-form" data-form="up,grace">上滑+倚音</button>
-      <button class="btn btn-form" data-form="up,single,grace">上滑+吐+倚音</button>
-      <button class="btn btn-form" data-form="grace">倚音</button>
-      <button class="btn btn-form btn-brush" data-act="brush">沿用写法</button>
-    </div>
-  </div>
+      <div class="pad-view view-notes">
+        <div class="keypad" role="group" aria-label="音符键">
+          <button class="key" data-note="1" type="button">1</button>
+          <button class="key" data-note="2" type="button">2</button>
+          <button class="key" data-note="3" type="button">3</button>
+          <button class="key" data-note="4" type="button">4</button>
+          <button class="key" data-note="5" type="button">5</button>
+          <button class="key" data-note="6" type="button">6</button>
+          <button class="key" data-note="7" type="button">7</button>
+          <button class="key key-rest" data-note="0" type="button">0<small>休止</small></button>
+        </div>
+      </div>
 
-  <div class="group group-more">
-    <div class="row">
-      <button class="btn btn-more" data-act="more" aria-expanded="false">更多符号 ▾</button>
-    </div>
-    <div class="row row-more">
-      <button class="btn btn-sym" data-orn="up">↗ 上滑音</button>
-      <button class="btn btn-sym" data-orn="down">↘ 下滑音</button>
-      <button class="btn btn-sym" data-orn="single">吐</button>
-      <button class="btn btn-sym" data-orn="double">吐库</button>
-      <button class="btn btn-sym" data-orn="triple">吐吐库</button>
-      <button class="btn btn-sym" data-orn="breath">v 吸气</button>
-      <button class="btn btn-sym" data-orn="grace" title="倚音：点此添加；再点乐谱里的那个小音符，可改它的音高/八度">倚音</button>
-      <button class="btn btn-sym" data-orn="da">打音</button>
-      <button class="btn btn-sym" data-orn="bo">波音 ~</button>
-      <button class="btn btn-sym" data-orn="trill">颤音 tr</button>
-      <button class="btn btn-sym" data-orn="repeatStart" title="开始反复：选中反复段落第一个音符，点此">‖: 开始反复</button>
-      <button class="btn btn-sym" data-orn="repeatEnd" title="结束反复：选中反复段落最后一个音符，点此">:‖ 结束反复</button>
-      <button class="btn btn-sym" data-orn="slur" title="连音线：先点起点音符，点此；再点终点音符，点此完成">连音线</button>
-      <button class="btn btn-sym" data-orn="slurDel" title="删连音线：选中连着连音线的音符，点此删除">删连音线</button>
-      <button class="btn" data-act="linebreak">换行</button>
-    </div>
-  </div>
+      <div class="pad-view view-octave">
+        <div class="choice-grid cols-3" role="group" aria-label="音区">
+          <button class="choice" data-act="octave-down" type="button">
+            <span class="ic"></span><span class="lb">低音</span>
+          </button>
+          <button class="choice" data-act="octave-mid" type="button">
+            <span class="ic"></span><span class="lb">中音</span>
+          </button>
+          <button class="choice" data-act="octave-up" type="button">
+            <span class="ic"></span><span class="lb">高音</span>
+          </button>
+        </div>
+        <p class="pad-hint">音符上面的小点是高音，下面的小点是低音。</p>
+      </div>
 
-  <div class="group">
-    <span class="group-title">编辑</span>
-    <div class="row">
-      <button class="btn" data-act="step-prev">◀ 上一步</button>
-      <button class="btn" data-act="step-next">下一步 ▶</button>
-      <button class="btn" data-act="undo">撤销</button>
-      <button class="btn" data-act="redo">重做</button>
-      <button class="btn" data-act="delete">删除</button>
-    </div>
-  </div>
+      <div class="pad-view view-dur">
+        <div class="choice-grid cols-3" role="group" aria-label="音符长短">
+          <button class="choice" data-dur="whole" type="button">
+            <span class="ic"></span><span class="lb">全音符</span>
+          </button>
+          <button class="choice" data-dur="half" type="button">
+            <span class="ic"></span><span class="lb">二分</span>
+          </button>
+          <button class="choice" data-dur="quarter" type="button">
+            <span class="ic"></span><span class="lb">四分</span>
+          </button>
+          <button class="choice" data-dur="eighth" type="button">
+            <span class="ic"></span><span class="lb">八分</span>
+          </button>
+          <button class="choice" data-dur="sixteenth" type="button">
+            <span class="ic"></span><span class="lb">十六分</span>
+          </button>
+          <button class="choice" data-dur="dur32" type="button">
+            <span class="ic"></span><span class="lb">三十二分</span>
+          </button>
+        </div>
+        <button class="choice choice-wide" data-act="dot" type="button">
+          <span class="ic"></span>
+          <span class="lb">附点 <small>延长一半</small></span>
+        </button>
+      </div>
 
-  <div class="group group-menu">
-    <div class="row">
-      <button class="btn btn-menu" id="menu-button" type="button" aria-expanded="false">☰ 菜单</button>
+      <div class="pad-view view-form">
+        <div class="choice-grid cols-4" id="form-primary" role="group" aria-label="常用吹法">
+          <button class="choice form-choice" data-form="" type="button">
+            <span class="ic"></span><span class="lb">素音</span>
+          </button>
+          <button class="choice form-choice" data-form="single" type="button">
+            <span class="ic"></span><span class="lb">吐</span>
+          </button>
+          <button class="choice form-choice" data-form="da" type="button">
+            <span class="ic"></span><span class="lb">打音</span>
+          </button>
+          <button class="choice form-choice" data-form="bo" type="button">
+            <span class="ic"></span><span class="lb">波音</span>
+          </button>
+          <button class="choice form-choice" data-form="grace" type="button">
+            <span class="ic"></span><span class="lb">倚音</span>
+          </button>
+          <button class="choice form-choice" data-form="breath" type="button">
+            <span class="ic"></span><span class="lb">吸气</span>
+          </button>
+          <button class="choice form-choice" data-form="up" type="button">
+            <span class="ic"></span><span class="lb">上滑</span>
+          </button>
+          <button class="choice form-choice" data-form="down" type="button">
+            <span class="ic"></span><span class="lb">下滑</span>
+          </button>
+        </div>
+
+        <button class="btn btn-expand" data-act="more-forms" id="more-forms-btn" type="button"
+          aria-expanded="false">更多吹法 ▾</button>
+
+        <div class="form-extra-list" id="form-extra" hidden>
+          <button class="btn" data-form="single,breath" type="button">吐 + 吸气</button>
+          <button class="btn" data-form="breath,bo" type="button">吸气 + 波音</button>
+          <button class="btn" data-form="up,single" type="button">上滑 + 吐</button>
+          <button class="btn" data-form="down,single" type="button">下滑 + 吐</button>
+          <button class="btn" data-form="up,grace" type="button">上滑 + 倚音</button>
+          <button class="btn" data-form="up,single,grace" type="button">上滑 + 吐 + 倚音</button>
+        </div>
+
+        <button class="brush-btn" data-act="brush" id="brush-btn" type="button" aria-pressed="false">
+          <span>之后每个音都用这个吹法</span>
+          <b id="brush-state">关</b>
+        </button>
+      </div>
+
+      <div class="pad-view view-more">
+        <p class="pad-hint">点一下加上或取消；上下滑动看更多，点谱子上的音可以换目标。</p>
+
+        <div class="more-group">
+          <h4>吹法</h4>
+          <div class="more-grid">
+            <button class="btn more-btn" data-orn="single" type="button">吐</button>
+            <button class="btn more-btn" data-orn="double" type="button">吐库</button>
+            <button class="btn more-btn" data-orn="triple" type="button">吐吐库</button>
+            <button class="btn more-btn" data-orn="da" type="button">打音</button>
+            <button class="btn more-btn" data-orn="bo" type="button">波音</button>
+            <button class="btn more-btn" data-orn="trill" type="button">颤音 tr</button>
+            <button class="btn more-btn" data-orn="breath" type="button">v 吸气</button>
+          </div>
+        </div>
+
+        <div class="more-group">
+          <h4>滑音与倚音</h4>
+          <div class="more-grid">
+            <button class="btn more-btn" data-orn="up" type="button">↗ 上滑音</button>
+            <button class="btn more-btn" data-orn="down" type="button">↘ 下滑音</button>
+            <button class="btn more-btn" data-orn="grace" type="button">倚音</button>
+          </div>
+        </div>
+
+        <div class="more-group">
+          <h4>反复、连音与换行</h4>
+          <div class="more-grid">
+            <button class="btn more-btn" data-orn="repeatStart" type="button">‖: 开始反复</button>
+            <button class="btn more-btn" data-orn="repeatEnd" type="button">:‖ 结束反复</button>
+            <button class="btn more-btn" data-orn="slur" type="button">连音线</button>
+            <button class="btn more-btn" data-orn="slurDel" type="button">删连音线</button>
+            <button class="btn more-btn" data-act="linebreak" type="button">换行</button>
+          </div>
+        </div>
+
+        <p class="pad-hint">连音线：先选起点，点「连音线」；再点终点，再点一次。</p>
+      </div>
+
+    </div><!-- /pad-body -->
+
+    <div class="pad-actions">
+      <button class="btn" data-act="undo" type="button">↶ 撤销</button>
+      <button class="btn" data-act="redo" type="button">↷ 重做</button>
+      <button class="btn btn-insert" data-act="insert" id="insert-btn" type="button"
+        aria-pressed="false">＋ 插入</button>
+      <button class="btn btn-danger-ghost" data-act="delete" type="button">删除</button>
+      <button class="btn" data-act="more" id="more-btn" type="button"
+        aria-pressed="false" aria-label="更多符号">更多符号</button>
     </div>
-  </div>
 
   </aside>
 </div><!-- /workspace -->
@@ -191,9 +263,18 @@
 
 <div id="preview" class="preview" hidden>
   <div class="preview-bar">
-    <span class="preview-title">打印预览</span>
-    <button type="button" class="btn btn-primary" id="preview-print">打印</button>
-    <button type="button" class="btn" id="preview-close">关闭</button>
+    <div class="preview-head">
+      <span class="preview-title">打印预览</span>
+      <span class="preview-fit" id="preview-fit"></span>
+      <button type="button" class="btn" id="preview-close">关闭</button>
+    </div>
+    <div class="preview-tools">
+      <button type="button" class="btn" id="preview-autofit">自动一页</button>
+      <button type="button" class="btn" id="preview-autofit2">自动两页</button>
+      <span class="preview-scale" id="preview-scale"></span>
+      <button type="button" class="btn btn-primary" id="preview-print">打印</button>
+    </div>
+    <p class="preview-hint">在打印窗口的“目标”里选“另存为 PDF”，就能保存成 PDF 文件。</p>
   </div>
   <div class="preview-body" id="preview-pages"></div>
 </div>
@@ -211,50 +292,88 @@
 <div id="help" class="help" role="dialog" aria-modal="true" aria-labelledby="help-title" aria-hidden="true">
   <div class="help-card">
     <div class="help-head">
-      <h2 id="help-title" class="help-title">⌨ 键盘快捷键</h2>
+      <h2 id="help-title" class="help-title">使用说明</h2>
       <button type="button" class="btn" id="help-close">关闭</button>
     </div>
     <div class="help-body">
+
       <section class="help-sec">
-        <h3>音符（自带音高 + 八度，按下即上屏）</h3>
-        <div class="help-row"><span class="help-k"><kbd>q</kbd><kbd>w</kbd><kbd>e</kbd><kbd>r</kbd><kbd>t</kbd><kbd>y</kbd><kbd>u</kbd></span><span class="help-v">低音 1 2 3 4 5 6 7</span></div>
-        <div class="help-row"><span class="help-k"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd><kbd>6</kbd><kbd>7</kbd></span><span class="help-v">中音 1 2 3 4 5 6 7</span></div>
-        <div class="help-row"><span class="help-k"><kbd>8</kbd><kbd>9</kbd><kbd>0</kbd><kbd>-</kbd><kbd>=</kbd><kbd>i</kbd><kbd>o</kbd></span><span class="help-v">高音 1 2 3 4 5 6 7</span></div>
-        <div class="help-row"><span class="help-k"><kbd>p</kbd></span><span class="help-v">倍高音 1</span></div>
-        <div class="help-row"><span class="help-k"><kbd>`</kbd></span><span class="help-v">休止符 0</span></div>
+        <h3>写谱就三步</h3>
+        <ol class="help-steps">
+          <li><b>点数字</b>：点数字 <b>1–7</b> 写音符，点 <b>0</b> 写休止。每点一个，谱子上马上出现一个音。</li>
+          <li><b>选音区和长短</b>：点「音区」选低音/中音/高音，点「长短」选全音符、四分、八分……<b>选一次会一直用</b>，直到你再改。</li>
+          <li><b>加吹法</b>：点「吹法」选吐、打音、波音、倚音等；点「音符」回到写谱。</li>
+        </ol>
       </section>
+
       <section class="help-sec">
-        <h3>时值（选中后持续生效，直到再改）</h3>
-        <div class="help-row"><span class="help-k"><kbd>z</kbd><kbd>x</kbd><kbd>c</kbd></span><span class="help-v">三十二分 · 十六分 · 八分</span></div>
-        <div class="help-row"><span class="help-k"><kbd>v</kbd></span><span class="help-v">四分</span></div>
-        <div class="help-row"><span class="help-k"><kbd>b</kbd><kbd>n</kbd><kbd>m</kbd></span><span class="help-v">二分（1增时线） · 附点二分（2增时线） · 全音符（3增时线）</span></div>
+        <h3>改错与修改</h3>
+        <div class="help-row"><span class="help-k">写错了</span><span class="help-v">点「撤销」；撤销多了可以点「重做」。</span></div>
+        <div class="help-row"><span class="help-k">改旧音符</span><span class="help-v">点谱子上的那个音，改完点「继续写」回到末尾。</span></div>
+        <div class="help-row"><span class="help-k">补一个音</span><span class="help-v">点谱子上的音，点「＋ 插入」，再点数字；新音会插在它后面。点「继续写」回末尾。</span></div>
+        <div class="help-row"><span class="help-k">翻音符</span><span class="help-v">修改时用标题两边的 <b>◀ ▶</b> 找上一个 / 下一个。</span></div>
+        <div class="help-row"><span class="help-k">删一个音</span><span class="help-v">点谱子上的那个音，再点「删除」；删错了还能撤销。</span></div>
+        <div class="help-row"><span class="help-k">更多符号</span><span class="help-v">反复记号、连音线、换行、颤音等，在「更多」里。</span></div>
       </section>
+
       <section class="help-sec">
-        <h3>组合键（按住修饰键再按音符键，一次出谱，不改持续时值）</h3>
-        <div class="help-row"><span class="help-k"><kbd>左Ctrl</kbd> + 音符</span><span class="help-v">三十二分</span></div>
-        <div class="help-row"><span class="help-k"><kbd>左Shift</kbd> + 音符</span><span class="help-v">十六分</span></div>
-        <div class="help-row"><span class="help-k"><kbd>左Alt</kbd> + 音符</span><span class="help-v">四分</span></div>
-        <div class="help-row"><span class="help-k"><kbd>右Alt</kbd> / <kbd>右Shift</kbd> / <kbd>右Ctrl</kbd> + 音符</span><span class="help-v">1 / 2 / 3 个增时线</span></div>
+        <h3>保存与打印</h3>
+        <div class="help-row"><span class="help-k">自动保存</span><span class="help-v">每次修改都会自动保存在这台设备，不用点保存。</span></div>
+        <div class="help-row"><span class="help-k">备份</span><span class="help-v">点「存到文件」下载一份文件；换设备时点「打开作品」。</span></div>
+        <div class="help-row"><span class="help-k">打印 / PDF</span><span class="help-v">点「打印」先看预览；在打印窗口的“目标”里选“另存为 PDF”，就是 PDF 文件。</span></div>
       </section>
-      <section class="help-sec">
-        <h3>预置与编辑</h3>
-        <div class="help-row"><span class="help-k"><kbd>f</kbd> / <kbd>g</kbd></span><span class="help-v">下一个音符降 / 升一个八度</span></div>
-        <div class="help-row"><span class="help-k"><kbd>.</kbd> 或 <kbd>,</kbd></span><span class="help-v">切换附点（持续）</span></div>
-        <div class="help-row"><span class="help-k"><kbd>Backspace</kbd> / <kbd>Delete</kbd></span><span class="help-v">删除当前音符</span></div>
-        <div class="help-row"><span class="help-k"><kbd>Esc</kbd></span><span class="help-v">回到末尾继续添加</span></div>
-        <div class="help-row"><span class="help-k"><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></span><span class="help-v">撤销 / 重做</span></div>
-      </section>
-      <p class="help-note">示例：先按 <kbd>f</kbd>（降八度）再按 <kbd>c</kbd>（八分）再按 <kbd>3</kbd>，即在定位光标处出现「低音 3 的八分音符」。<br>
-      提示：<kbd>左Ctrl</kbd>+<kbd>W</kbd>、<kbd>T</kbd>、<kbd>Q</kbd>、<kbd>1</kbd>–<kbd>9</kbd> 等为浏览器保留键，可能无法拦截，建议以独立窗口 / PWA 方式使用。</p>
+
+      <details class="help-details">
+        <summary>电脑键盘快速输入（可选）</summary>
+
+        <section class="help-sec">
+          <h3>音符（按下即接在曲谱末尾）</h3>
+          <div class="help-row"><span class="help-k"><kbd>q</kbd><kbd>w</kbd><kbd>e</kbd><kbd>r</kbd><kbd>t</kbd><kbd>y</kbd><kbd>u</kbd></span><span class="help-v">低音 1 2 3 4 5 6 7</span></div>
+          <div class="help-row"><span class="help-k"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd><kbd>6</kbd><kbd>7</kbd></span><span class="help-v">中音 1 2 3 4 5 6 7</span></div>
+          <div class="help-row"><span class="help-k"><kbd>8</kbd><kbd>9</kbd><kbd>0</kbd><kbd>-</kbd><kbd>=</kbd><kbd>i</kbd><kbd>o</kbd></span><span class="help-v">高音 1 2 3 4 5 6 7</span></div>
+          <div class="help-row"><span class="help-k"><kbd>p</kbd></span><span class="help-v">倍高音 1</span></div>
+          <div class="help-row"><span class="help-k"><kbd>`</kbd></span><span class="help-v">休止符 0</span></div>
+        </section>
+
+        <section class="help-sec">
+          <h3>时值（选中后持续生效，直到再改）</h3>
+          <div class="help-row"><span class="help-k"><kbd>z</kbd><kbd>x</kbd><kbd>c</kbd></span><span class="help-v">三十二分 · 十六分 · 八分</span></div>
+          <div class="help-row"><span class="help-k"><kbd>v</kbd></span><span class="help-v">四分</span></div>
+          <div class="help-row"><span class="help-k"><kbd>b</kbd><kbd>n</kbd><kbd>m</kbd></span><span class="help-v">二分（1增时线） · 附点二分（2增时线） · 全音符（3增时线）</span></div>
+        </section>
+
+        <section class="help-sec">
+          <h3>组合键（按住修饰键再按音符键，一次出谱，不改持续时值）</h3>
+          <div class="help-row"><span class="help-k"><kbd>左Ctrl</kbd> + 音符</span><span class="help-v">三十二分</span></div>
+          <div class="help-row"><span class="help-k"><kbd>左Shift</kbd> + 音符</span><span class="help-v">十六分</span></div>
+          <div class="help-row"><span class="help-k"><kbd>左Alt</kbd> + 音符</span><span class="help-v">四分</span></div>
+          <div class="help-row"><span class="help-k"><kbd>右Alt</kbd> / <kbd>右Shift</kbd> / <kbd>右Ctrl</kbd> + 音符</span><span class="help-v">1 / 2 / 3 个增时线</span></div>
+        </section>
+
+        <section class="help-sec">
+          <h3>预置与编辑</h3>
+          <div class="help-row"><span class="help-k"><kbd>f</kbd> / <kbd>g</kbd></span><span class="help-v">下一个音符降 / 升一个八度</span></div>
+          <div class="help-row"><span class="help-k"><kbd>←</kbd> / <kbd>→</kbd></span><span class="help-v">上一个 / 下一个音符；在末尾按 → 回到继续写</span></div>
+          <div class="help-row"><span class="help-k"><kbd>.</kbd> 或 <kbd>,</kbd></span><span class="help-v">切换附点（持续）</span></div>
+          <div class="help-row"><span class="help-k"><kbd>Backspace</kbd> / <kbd>Delete</kbd></span><span class="help-v">删除当前音符</span></div>
+          <div class="help-row"><span class="help-k"><kbd>Esc</kbd></span><span class="help-v">回到末尾继续添加</span></div>
+          <div class="help-row"><span class="help-k"><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></span><span class="help-v">撤销 / 重做</span></div>
+        </section>
+
+        <p class="help-note">示例：先按 <kbd>f</kbd>（降八度）再按 <kbd>c</kbd>（八分）再按 <kbd>3</kbd>，就在末尾出现「低音 3 的八分音符」。<br>
+        键盘输入默认接在末尾；用「＋ 插入」进入插入状态后，会在插入点继续插入。要改旧音符，请用鼠标点选后再点下方按钮。<br>
+        提示：<kbd>左Ctrl</kbd>+<kbd>W</kbd>、<kbd>T</kbd>、<kbd>Q</kbd>、<kbd>1</kbd>–<kbd>9</kbd> 等为浏览器保留键，可能无法拦截，建议以独立窗口 / PWA 方式使用。</p>
+      </details>
+
     </div>
   </div>
 </div>
 
-<script src="js/model.js?v=6"></script>
-<script src="js/symbols.js?v=6"></script>
-<script src="js/render.js?v=6"></script>
-<script src="js/storage.js?v=6"></script>
-<script src="js/export.js?v=6"></script>
-<script src="js/input.js?v=6"></script>
+<script src="js/model.js?v=9"></script>
+<script src="js/symbols.js?v=9"></script>
+<script src="js/render.js?v=9"></script>
+<script src="js/storage.js?v=9"></script>
+<script src="js/export.js?v=9"></script>
+<script src="js/input.js?v=9"></script>
 </body>
 </html>

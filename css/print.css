@@ -15,14 +15,17 @@
   }
   body { display: block !important; }
 
+  .help,
+  .dialog,
   .menu-toggle,
   .filebar,
   .appbar,
   .meta,
   .status,
   .toolbar,
-  .append-dock,
-  #toast {
+  #toast,
+  .empty-hint,
+  .empty-hint-sub {
     display: none !important;
   }
 
@@ -36,7 +39,7 @@
   .pane-main { display: block; width: 100%; }
 
   .stage {
-    display: block;
+    display: block !important;
     padding: 0;
   }
 
@@ -95,5 +98,23 @@
     overflow: visible;
     padding: 0;
     gap: 0;
+  }
+
+  /* 屏幕上的 A4 纸框：打印时拆掉框，恢复纸张分页 */
+  body.preview-open #preview .page-frame {
+    display: block;
+    width: auto;
+    max-width: none;
+    flex: none;
+    container-type: normal;
+    break-after: page;
+  }
+  body.preview-open #preview .page-frame:last-child { break-after: auto; }
+
+  body.preview-open #preview .paper.page {
+    aspect-ratio: auto;
+    overflow: visible;
+    padding: 4mm;
+    break-after: auto;
   }
 }

@@ -238,8 +238,9 @@ window.HLS = window.HLS || {};
       // 正在编辑这个音符：实心高亮框
       out += '<rect class="selbox" x="' + (x - 4) + '" y="' + (by - 46) +
         '" width="' + (w + 6) + '" height="72" rx="9"/>';
-    } else if (p.i === target) {
-      // 准备在它后面插入下一个音符：闪烁光标
+    }
+    if (p.i === target) {
+      // 准备在它后面插入下一个音符：闪烁光标（插入模式下可与选中框同时出现）
       out += caretMark(x + w + 3, by);
     }
     if (pending && n.id === pending) {
@@ -478,9 +479,14 @@ window.HLS = window.HLS || {};
       parts.push(noteGroup(L.place[pi], song, sel, target, pending, graceEdit));
     }
 
-    // 空谱：在起始位置显示插入光标
+    // 空谱：在起始位置显示插入光标，并给第一次使用的老人一句引导
     if (guide && L.place.length === 0) {
-      parts.push(caretMark(G.padX + 2, headerH + G.baseline));
+      var hintY = headerH + G.baseline;
+      parts.push(caretMark(G.padX + 2, hintY));
+      parts.push('<text class="empty-hint" x="' + (G.padX + 26) + '" y="' + (hintY + 2) +
+        '">点数字 1–7，开始写第一句</text>');
+      parts.push('<text class="empty-hint-sub" x="' + (G.padX + 26) + '" y="' + (hintY + 32) +
+        '">0 是休止；音区、长短随时可改</text>');
     }
 
     parts.push(slurs(song, L.place));
@@ -573,7 +579,12 @@ window.HLS = window.HLS || {};
     };
     for (var i = 0; i < keys.length; i++) {
       var k = keys[i];
-      if (k === 'grace') note.grace = { pitch: (pitch > 1 ? pitch - 1 : 7), octave: octave };
+      if (k === 'grace') {
+        note.grace = {
+          pitch: (pitch > 1 ? pitch - 1 : 7),
+          octave: pitch > 1 ? octave : octave - 1
+        };
+      }
       else if (note.orn.hasOwnProperty(k)) note.orn[k] = true;
     }
     var octTop = Math.max(0, octave);
@@ -691,9 +702,10 @@ window.HLS = window.HLS || {};
       '<style>' + FP_STYLE + '</style>' + out + '</svg>';
   }
 
-  function mount(container, song, sel, target, pending, graceEdit, guide, viewScale) {
+  function mount(container, song, sel, target, pending, graceEdit, guide, viewScale, compact) {
     if (sel === undefined) sel = -1;
     if (target === undefined) target = -1;
+    if (compact === undefined) compact = !!viewScale;
     var segs = splitPages(song);
     container.innerHTML = '';
     var anyNotFit = false;
@@ -707,7 +719,7 @@ window.HLS = window.HLS || {};
       var ltgt = (target >= off && target < off + len) ? target - off : -1;
       var lgr = (graceEdit >= off && graceEdit < off + len) ? graceEdit - off : -1;
       var r = buildContent(sub, lsel, ltgt, pending, lgr, guide !== false,
-        { index: p, total: segs.length, compact: !!viewScale });
+        { index: p, total: segs.length, compact: compact });
 
       var page = document.createElement('div');
       page.className = 'paper page';
