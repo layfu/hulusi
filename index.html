@@ -4,10 +4,201 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>葫芦丝打谱</title>
-<link rel="stylesheet" href="css/base.css?v=9">
-<link rel="stylesheet" href="css/print.css?v=9" media="print">
+<style>
+/* 启动画面内联：HTML 一到就显示，不依赖外部 css/js */
+#boot-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 24px 24px calc(24px + env(safe-area-inset-bottom, 0px));
+  background: radial-gradient(circle at 50% 38%, #fbf9f4 0%, #f4f1ea 58%, #ece7dd 100%);
+  color: #1b1a17;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  text-align: center;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: opacity 320ms ease, visibility 0s linear 320ms;
+}
+#boot-screen, #boot-screen * { box-sizing: border-box; }
+#boot-screen.boot-hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.boot-mark {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+}
+.boot-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(43, 111, 72, 0.22);
+  border-radius: 50%;
+  animation: bootRing 2.4s ease-out infinite;
+}
+.boot-logo {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  background: #2b6f48;
+  color: #fff;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 14px 32px rgba(43, 111, 72, 0.26);
+  animation: bootBreathe 2.4s ease-in-out infinite;
+}
+.boot-title {
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.boot-sub {
+  max-width: 320px;
+  min-height: 24px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #54504a;
+}
+.boot-dots {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.boot-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2b6f48;
+  opacity: 0.25;
+  animation: bootDot 1.2s ease-in-out infinite;
+}
+.boot-dots i:nth-child(2) { animation-delay: 0.16s; }
+.boot-dots i:nth-child(3) { animation-delay: 0.32s; }
+.boot-reload {
+  min-height: 52px;
+  padding: 0 22px;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  background: #2b6f48;
+  border: 2px solid #2b6f48;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.boot-reload:active { transform: scale(0.97); }
+.boot-reload:focus-visible {
+  outline: 3px solid #2b6f48;
+  outline-offset: 3px;
+}
+.boot-noscript {
+  max-width: 320px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #c0392b;
+}
+@keyframes bootBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+@keyframes bootRing {
+  0% { transform: scale(0.78); opacity: 0.75; }
+  75%, 100% { transform: scale(1.22); opacity: 0; }
+}
+@keyframes bootDot {
+  0%, 80%, 100% { opacity: 0.22; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-5px); }
+}
+html.boot-lock, html.boot-lock body { overflow: hidden !important; }
+@media (prefers-reduced-motion: reduce) {
+  .boot-logo, .boot-ring, .boot-dots i { animation: none !important; }
+  .boot-ring { opacity: 0; }
+  #boot-screen { transition-duration: 0.01ms; }
+}
+</style>
+<link rel="preload" href="css/base.css?v=10" as="style"
+  onload="this.onload=null;this.rel='stylesheet';this.media='all';window.__hlsCssReady=true;if(window.HLSBoot)window.HLSBoot.cssReady();try{document.dispatchEvent(new Event('hls:cssready'));}catch(e){}">
+<noscript><link rel="stylesheet" href="css/base.css?v=10"></noscript>
+<link rel="stylesheet" href="css/print.css?v=10" media="print">
 </head>
 <body data-view="notes" data-mode="append">
+
+<div id="boot-screen" class="boot-screen" role="status" aria-live="polite" aria-label="正在打开曲谱">
+  <div class="boot-mark" aria-hidden="true">
+    <span class="boot-ring"></span>
+    <span class="boot-logo">葫</span>
+  </div>
+  <div class="boot-title">正在打开曲谱…</div>
+  <div class="boot-sub" id="boot-sub">第一次打开会慢一点，请稍等</div>
+  <div class="boot-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+  <button class="boot-reload" id="boot-reload" type="button" hidden>重新加载</button>
+  <noscript><div class="boot-noscript">需要开启浏览器的 JavaScript 才能使用。</div></noscript>
+</div>
+<script>
+(function () {
+  var started = Date.now();
+  var screen = document.getElementById('boot-screen');
+  var sub = document.getElementById('boot-sub');
+  var reload = document.getElementById('boot-reload');
+  var cssReady = !!window.__hlsCssReady;
+  var appReady = false;
+  var finished = false;
+
+  function tryHide() {
+    if (finished || !cssReady || !appReady) return;
+    finished = true;
+    clearTimeout(slowTimer);
+    clearTimeout(stuckTimer);
+    var wait = Math.max(0, 360 - (Date.now() - started));
+    setTimeout(function () {
+      document.documentElement.classList.remove('boot-lock');
+      document.body.removeAttribute('aria-busy');
+      screen.classList.add('boot-hide');
+      screen.setAttribute('aria-hidden', 'true');
+      setTimeout(function () {
+        if (screen.parentNode) screen.parentNode.removeChild(screen);
+      }, 380);
+    }, wait);
+  }
+
+  window.HLSBoot = {
+    done: function () { appReady = true; tryHide(); },
+    cssReady: function () { cssReady = true; tryHide(); }
+  };
+
+  document.documentElement.classList.add('boot-lock');
+  document.body.setAttribute('aria-busy', 'true');
+
+  var slowTimer = setTimeout(function () {
+    if (finished) return;
+    sub.textContent = '网络有点慢，正在继续加载…';
+  }, 6000);
+
+  var stuckTimer = setTimeout(function () {
+    if (finished) return;
+    sub.textContent = '加载时间有点长，可以检查网络后重试';
+    if (reload) reload.hidden = false;
+  }, 18000);
+
+  if (reload) reload.addEventListener('click', function () { location.reload(); });
+  if (cssReady) tryHide();
+})();
+</script>
+
 
 <header class="appbar">
   <div class="brand">
@@ -369,11 +560,11 @@
   </div>
 </div>
 
-<script src="js/model.js?v=9"></script>
-<script src="js/symbols.js?v=9"></script>
-<script src="js/render.js?v=9"></script>
-<script src="js/storage.js?v=9"></script>
-<script src="js/export.js?v=9"></script>
-<script src="js/input.js?v=9"></script>
+<script defer src="js/model.js?v=10"></script>
+<script defer src="js/symbols.js?v=10"></script>
+<script defer src="js/render.js?v=10"></script>
+<script defer src="js/storage.js?v=10"></script>
+<script defer src="js/export.js?v=10"></script>
+<script defer src="js/input.js?v=10"></script>
 </body>
 </html>

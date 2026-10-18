@@ -1705,9 +1705,40 @@ window.HLS = window.HLS || {};
     });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
+  // 启动顺序：等基础样式表就绪后再初始化，避免在未套样式时测量宽度、排错版。
+  var appStarted = false;
+  function startApp() {
+    if (appStarted) return;
+    appStarted = true;
     init();
+    if (window.HLSBoot && window.HLSBoot.done) {
+      window.HLSBoot.done();
+    } else {
+      // 极端情况下启动脚本没跑到：至少别让启动画面一直盖着
+      var boot = document.getElementById('boot-screen');
+      if (boot && boot.parentNode) boot.parentNode.removeChild(boot);
+      document.documentElement.classList.remove('boot-lock');
+      document.body.removeAttribute('aria-busy');
+    }
   }
+
+  function waitForCssThenStart() {
+    if (window.__hlsCssReady) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startApp, { once: true });
+      } else {
+        startApp();
+      }
+      return;
+    }
+    document.addEventListener('hls:cssready', function () {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startApp, { once: true });
+      } else {
+        startApp();
+      }
+    }, { once: true });
+  }
+
+  waitForCssThenStart();
 })(window.HLS);
