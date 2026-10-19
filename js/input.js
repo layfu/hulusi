@@ -320,6 +320,22 @@ window.HLS = window.HLS || {};
     return keys.sort();
   }
 
+  // 把「刚写完的这个音」的写法同步成下一支笔：音区、长短、附点、全部吹法。
+  // 这样在「更多」里加的波音/打音等，点「音符（写下一个）」后也会带到下一个音。
+  function syncPenFromNote(note) {
+    if (!note) return;
+    state.defaults.octave = note.octave || 0;
+    state.defaults.dur = note.dur;
+    state.defaults.dotted = !!note.dotted;
+    state.pendingForm = formKeysOf(note);
+    if (state.brush) state.brushForm = state.pendingForm.slice();
+  }
+
+  function syncPenFromBuildingNote() {
+    if (state.mode !== 'edit' || !state.building) return;
+    syncPenFromNote(contextNote());
+  }
+
   function formNorm(keys) {
     return (keys || []).slice().sort().join(',');
   }
@@ -552,7 +568,10 @@ window.HLS = window.HLS || {};
       b.classList.toggle('active', on);
       b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
-    setTabVal('#tab-note', state.gracePick ? '改倚音' : (state.mode === 'insert' ? '插入' : (c ? '改音高' : '写谱')));
+    setTabVal('#tab-note', state.gracePick ? '改倚音'
+      : (state.mode === 'insert' ? '插入'
+        : (state.mode === 'edit' && state.building ? '写下一个'
+          : (c ? '点数字' : '写谱'))));
     setTabVal('#tab-octave', octaveLabel(oct));
     setTabVal('#tab-dur', durLabel(dur, dotted));
     setTabVal('#tab-form', formLabel(fkeys));
@@ -709,7 +728,8 @@ window.HLS = window.HLS || {};
       return;
     }
 
-    // 在末尾新增：用当前“笔”的设置
+    // 在末尾新增：用当前“笔”的设置；刚写完的音先把它的写法同步过来
+    if (c && state.building) syncPenFromNote(c);
     var d = state.defaults;
     var form = state.brush ? (state.brushForm || []) : (state.pendingForm || null);
     state.kxShift = 0;
@@ -1021,12 +1041,14 @@ window.HLS = window.HLS || {};
           state.view = 'notes';
         }
       });
+      syncPenFromBuildingNote();
       return;
     }
     commit(function () {
       var n = state.song.notes[idx];
       if (n.orn.hasOwnProperty(key)) n.orn[key] = !n.orn[key];
     });
+    syncPenFromBuildingNote();
   }
 
   function toggleLineBreak() {
@@ -1127,6 +1149,7 @@ window.HLS = window.HLS || {};
   }
 
   function toAppend() {
+    syncPenFromBuildingNote();
     state.mode = 'append';
     state.sel = -1;
     state.insertAt = null;
@@ -1248,6 +1271,7 @@ window.HLS = window.HLS || {};
     var views = ['notes', 'octave', 'dur', 'form', 'more'];
     if (views.indexOf(v) < 0) return;
     var next = (state.view === v && v !== 'notes') ? 'notes' : v;
+    if (next === 'notes') syncPenFromBuildingNote();
     var wasGrace = state.gracePick;
     state.view = next;
     clearGracePick(); // 离开音符页签就取消“选倚音音高”

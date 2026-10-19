@@ -130,10 +130,10 @@ html.boot-lock, html.boot-lock body { overflow: hidden !important; }
   #boot-screen { transition-duration: 0.01ms; }
 }
 </style>
-<link rel="preload" href="css/base.css?v=12" as="style"
+<link rel="preload" href="css/base.css?v=14" as="style"
   onload="this.onload=null;this.rel='stylesheet';this.media='all';window.__hlsCssReady=true;if(window.HLSBoot)window.HLSBoot.cssReady();try{document.dispatchEvent(new Event('hls:cssready'));}catch(e){}">
-<noscript><link rel="stylesheet" href="css/base.css?v=12"></noscript>
-<link rel="stylesheet" href="css/print.css?v=12" media="print">
+<noscript><link rel="stylesheet" href="css/base.css?v=14"></noscript>
+<link rel="stylesheet" href="css/print.css?v=14" media="print">
 </head>
 <body data-view="notes" data-mode="append">
 
@@ -493,14 +493,14 @@ html.boot-lock, html.boot-lock body { overflow: hidden !important; }
         <ol class="help-steps">
           <li><b>点数字</b>：点数字 <b>1–7</b> 写音符，点 <b>0</b> 写休止。每点一个，谱子上马上出现一个音。</li>
           <li><b>选音区和长短</b>：点「音区」选低音/中音/高音，点「长短」选全音符、四分、八分……<b>选一次会一直用</b>，直到你再改。数字键上会直接显示当前写法。</li>
-          <li><b>加吹法</b>：点「吹法」选吐、打音、波音、倚音等；选好后会自动回到数字键，再点数字继续写。</li>
+          <li><b>加吹法</b>：点「吹法」选吐、打音、波音、倚音等；选好后会自动回到数字键，再点数字继续写。刚写完的音的吹法会带到下一个音，在「更多」里加的波音也一样。</li>
         </ol>
       </section>
 
       <section class="help-sec">
         <h3>改错与修改</h3>
         <div class="help-row"><span class="help-k">写错了</span><span class="help-v">点「撤销」；撤销多了可以点「重做」。</span></div>
-        <div class="help-row"><span class="help-k">改旧音符</span><span class="help-v">点谱子上的那个音，或点标题左边的 <b>◀</b>；改完点「继续写」回到末尾。</span></div>
+        <div class="help-row"><span class="help-k">改旧音符</span><span class="help-v">点谱子上的那个音，或点标题左边的 <b>◀</b>，再点数字改音高；改完点「继续写」回到末尾。</span></div>
         <div class="help-row"><span class="help-k">补一个音</span><span class="help-v">点谱子上的音，点「＋ 插入」，再点数字；新音会插在它后面。点「继续写」回末尾。</span></div>
         <div class="help-row"><span class="help-k">翻音符</span><span class="help-v">写谱时也能点 <b>◀</b> 往回翻；修改时用标题两边的 <b>◀ ▶</b> 找上一个 / 下一个。</span></div>
         <div class="help-row"><span class="help-k">删一个音</span><span class="help-v">点谱子上的那个音，再点「删除」；删错了还能撤销。</span></div>
@@ -560,11 +560,11 @@ html.boot-lock, html.boot-lock body { overflow: hidden !important; }
   </div>
 </div>
 
-<script defer src="js/model.js?v=12"></script>
-<script defer src="js/symbols.js?v=12"></script>
-<script defer src="js/render.js?v=12"></script>
-<script defer src="js/storage.js?v=12"></script>
-<script defer src="js/export.js?v=12"></script>
-<script defer src="js/input.js?v=12"></script>
+<script defer src="js/model.js?v=14"></script>
+<script defer src="js/symbols.js?v=14"></script>
+<script defer src="js/render.js?v=14"></script>
+<script defer src="js/storage.js?v=14"></script>
+<script defer src="js/export.js?v=14"></script>
+<script defer src="js/input.js?v=14"></script>
 </body>
 </html>
